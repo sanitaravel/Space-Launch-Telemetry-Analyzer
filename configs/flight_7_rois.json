@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "time_unit": "frames",
+  "rois": [
+    {
+      "id": "SH_SPEED",
+      "label": "Superheavy Speed",
+      "y": 913,
+      "h": 25,
+      "x": 359,
+      "w": 83,
+      "start_time": 71965,
+      "end_time": 84718,
+      "match_to_role": "sh_speed"
+    },
+    {
+      "id": "SH_ALTITUDE",
+      "label": "Superheavy Altitude",
+      "y": 948,
+      "h": 25,
+      "x": 392,
+      "w": 50,
+      "start_time": 71965,
+      "end_time": 84718,
+      "match_to_role": "sh_altitude"
+    },
+    {
+      "id": "SS_SPEED",
+      "label": "Starship Speed",
+      "y": 913,
+      "h": 25,
+      "x": 1539,
+      "w": 83,
+      "start_time": 71965,
+      "end_time": 87538,
+      "match_to_role": "ss_speed"
+    },
+    {
+      "id": "SS_ALTITUDE",
+      "label": "Starship Altitude",
+      "y": 948,
+      "h": 25,
+      "x": 1572,
+      "w": 50,
+      "start_time": 71965,
+      "end_time": 87538,
+      "match_to_role": "ss_altitude"
+    },
+    {
+      "id": "TIME",
+      "label": "Time Display",
+      "y": 940,
+      "h": 44,
+      "x": 860,
+      "w": 197,
+      "start_time": 71965,
+      "end_time": 87538,
+      "match_to_role": "time"
+    }
+    ,
+    {
+      "id": "SH_ENGINES",
+      "label": "Superheavy Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 71965,
+      "end_time": 84718,
+      "match_to_role": "sh_engines",
+      "points": {
+        "central_stack": [[109, 970], [120, 989], [98, 989]],
+        "inner_ring": [[102, 1018], [82, 1006], [74, 986], [78, 964], [94, 950], [116, 948], [136, 958], [144, 978], [140, 1000], [124, 1016]],
+        "outer_ring": [[106, 1044], [86, 1040], [70, 1030], [57, 1016], [49, 998], [47, 980], [51, 960], [61, 944], [75, 930], [93, 922], [112, 920], [131, 924], [148, 934], [161, 948], [169, 966], [171, 986], [167, 1005], [157, 1022], [143, 1034], [125, 1042]]
+      }
+    },
+    {
+      "id": "SS_ENGINES",
+      "label": "Starship Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 71965,
+      "end_time": 87538,
+      "match_to_role": "ss_engines",
+      "points": {
+        "rearth": [[1815,952],[1801,978],[1830,978]],
+        "rvac": [[1764, 1024], [1815, 937], [1866, 1024]]
+      }
+    }
+  ]
+}

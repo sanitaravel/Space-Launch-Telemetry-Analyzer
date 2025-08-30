@@ -166,18 +166,18 @@ def create_scatter_plot(df: pd.DataFrame, x: str, y: str, title: str, filename: 
         # Only use non-null values for the trendline
         valid_data = df[[x, y]].dropna()
 
-        if len(valid_data) > 30:  # Only add trendline if we have enough data points
-            logger.debug(f"Adding 30-point rolling window trendline")
+        if len(valid_data) > 10:  # Only add trendline if we have enough data points
+            logger.debug(f"Adding 10-point rolling window trendline")
             
             # Sort data by x-axis value to ensure proper rolling window calculation
             valid_data = valid_data.sort_values(by=x)
-            
-            # Use pandas rolling window (30 points) instead of LOWESS smoothing
-            valid_data['trend'] = valid_data[y].rolling(window=30, center=True, min_periods=5).mean()
-            
+
+            # Use pandas rolling window (10 points) instead of LOWESS smoothing
+            valid_data['trend'] = valid_data[y].rolling(window=10, center=True, min_periods=5).mean()
+
             # Plot the rolling average trendline
             plt.plot(valid_data[x], valid_data['trend'], color='crimson',
-                     linewidth=LINE_WIDTH, label=f"{label} (30-point Rolling Average)")
+                     linewidth=LINE_WIDTH, label=f"{label} (10-point Rolling Average)")
 
     # Set labels with consistent styling
     plt.xlabel(x_axis, fontsize=LABEL_FONT_SIZE)
