@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 1,
   "time_unit": "frames",
   "rois": [
     {
@@ -9,8 +9,8 @@
       "h": 25,
       "x": 359,
       "w": 83,
-      "start_time": 71965,
-      "end_time": 84718,
+      "start_time": 71993,
+      "end_time": 84888,
       "match_to_role": "sh_speed"
     },
     {
@@ -20,8 +20,8 @@
       "h": 25,
       "x": 392,
       "w": 50,
-      "start_time": 71965,
-      "end_time": 84718,
+      "start_time": 71993,
+      "end_time": 84888,
       "match_to_role": "sh_altitude"
     },
     {
@@ -31,8 +31,8 @@
       "h": 25,
       "x": 1539,
       "w": 83,
-      "start_time": 71965,
-      "end_time": 87538,
+      "start_time": 71993,
+      "end_time": 190318,
       "match_to_role": "ss_speed"
     },
     {
@@ -42,8 +42,8 @@
       "h": 25,
       "x": 1572,
       "w": 50,
-      "start_time": 71965,
-      "end_time": 87538,
+      "start_time": 71993,
+      "end_time": 190318,
       "match_to_role": "ss_altitude"
     },
     {
@@ -53,8 +53,8 @@
       "h": 44,
       "x": 860,
       "w": 197,
-      "start_time": 71965,
-      "end_time": 87538,
+      "start_time": 71993,
+      "end_time": 190318,
       "match_to_role": "time"
     },
     {
@@ -64,8 +64,8 @@
       "h": 0,
       "x": 0,
       "w": 0,
-      "start_time": 71965,
-      "end_time": 84718,
+      "start_time": 71993,
+      "end_time": 84888,
       "match_to_role": "sh_engines",
       "points": {
         "central_stack": [
@@ -116,8 +116,8 @@
       "h": 0,
       "x": 0,
       "w": 0,
-      "start_time": 71965,
-      "end_time": 87538,
+      "start_time": 71993,
+      "end_time": 190318,
       "match_to_role": "ss_engines",
       "points": {
         "rearth": [
