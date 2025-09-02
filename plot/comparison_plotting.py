@@ -99,20 +99,20 @@ def plot_multiple_launches(df_list: list, x: str, y: str, title: str, filename: 
         )
 
         # Add trendline only for acceleration and g-force plots
-        if ('acceleration' in y or 'g_force' in y) and len(df[[x, y]].dropna()) > 30:
+        if ('acceleration' in y or 'g_force' in y) and len(df[[x, y]].dropna()) > 10:
             # Only use non-null values for the trendline
             valid_data = df[[x, y]].dropna()
-            logger.debug(f"Launch {label}: Adding 30-point rolling window trendline")
-            
+            logger.debug(f"Launch {label}: Adding 10-point rolling window trendline")
+
             # Sort data by x-axis value to ensure proper rolling window calculation
             valid_data = valid_data.sort_values(by=x)
             
-            # Use pandas rolling window (30 points) instead of LOWESS smoothing
-            valid_data['trend'] = valid_data[y].rolling(window=30, center=True, min_periods=5).mean()
-            
+            # Use pandas rolling window (10 points) instead of LOWESS smoothing
+            valid_data['trend'] = valid_data[y].rolling(window=10, center=True, min_periods=5).mean()
+
             # Plot the rolling average trendline
             plt.plot(valid_data[x], valid_data['trend'], '-', linewidth=LINE_WIDTH,
-                     label=f"{label} (30-point Rolling Avg)", color=color)
+                     label=f"{label} (10-point Rolling Avg)", color=color)
 
     # Set labels with consistent styling
     plt.xlabel(x_axis, fontsize=LABEL_FONT_SIZE)

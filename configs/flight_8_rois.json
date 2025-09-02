@@ -1,0 +1,132 @@
+{
+  "version": 2,
+  "time_unit": "frames",
+  "rois": [
+    {
+      "id": "SH_SPEED",
+      "label": "Superheavy Speed",
+      "y": 913,
+      "h": 25,
+      "x": 359,
+      "w": 83,
+      "start_time": 63894,
+      "end_time": 76918,
+      "match_to_role": "sh_speed"
+    },
+    {
+      "id": "SH_ALTITUDE",
+      "label": "Superheavy Altitude",
+      "y": 948,
+      "h": 25,
+      "x": 392,
+      "w": 50,
+      "start_time": 63894,
+      "end_time": 76918,
+      "match_to_role": "sh_altitude"
+    },
+    {
+      "id": "SS_SPEED",
+      "label": "Starship Speed",
+      "y": 913,
+      "h": 25,
+      "x": 1539,
+      "w": 83,
+      "start_time": 63894,
+      "end_time": 81412,
+      "match_to_role": "ss_speed"
+    },
+    {
+      "id": "SS_ALTITUDE",
+      "label": "Starship Altitude",
+      "y": 948,
+      "h": 25,
+      "x": 1572,
+      "w": 50,
+      "start_time": 63894,
+      "end_time": 81412,
+      "match_to_role": "ss_altitude"
+    },
+    {
+      "id": "TIME",
+      "label": "Time Display",
+      "y": 940,
+      "h": 44,
+      "x": 860,
+      "w": 197,
+      "start_time": 63894,
+      "end_time": 81412,
+      "match_to_role": "time"
+    },
+    {
+      "id": "SH_ENGINES",
+      "label": "Superheavy Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 63894,
+      "end_time": 76918,
+      "match_to_role": "sh_engines",
+      "points": {
+        "central_stack": [
+          [109, 970],
+          [98, 989],
+          [120, 989]
+        ],
+        "inner_ring": [
+          [109, 946],
+          [88, 953],
+          [130, 953],
+          [75, 970],
+          [143, 971],
+          [75, 993],
+          [143, 993],
+          [87, 1011],
+          [130, 1011],
+          [109, 1019]
+        ],
+        "outer_ring": [
+          [98, 921],
+          [118, 921],
+          [80, 927],
+          [137, 927],
+          [153, 938],
+          [64, 939],
+          [53, 953],
+          [164, 954],
+          [47, 973],
+          [170, 973],
+          [170, 992],
+          [47, 993],
+          [164, 1010],
+          [53, 1011],
+          [153, 1025],
+          [65, 1026],
+          [137, 1037],
+          [80, 1038],
+          [99, 1044],
+          [118, 1044]
+        ]
+      }
+    },
+    {
+      "id": "SS_ENGINES",
+      "label": "Starship Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 63894,
+      "end_time": 81412,
+      "match_to_role": "ss_engines",
+      "points": {
+        "rearth": [
+          [1815,952],[1801,978],[1830,978]
+        ],
+        "rvac": [
+          [1764,939],[1866,940],[1815,1028]
+        ]
+      }
+    }
+  ]
+}
