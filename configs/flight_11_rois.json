@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "time_unit": "frames",
+  "rois": [
+    { 
+      "id": "SH_SPEED",
+      "label": "Superheavy Speed",
+      "y": 970,
+      "h": 37,
+      "x": 1544,
+      "w": 114,
+      "start_time": 60538,
+      "end_time": 65740,
+      "match_to_role": "sh_speed"
+    },
+    {
+      "id": "SH_ALTITUDE",
+      "label": "Superheavy Altitude",
+      "y": 970,
+      "h": 37,
+      "x": 1707,
+      "w": 114,
+      "start_time": 60538,
+      "end_time": 65410,
+      "match_to_role": "sh_altitude"
+    },
+    {
+      "id": "SS_SPEED",
+      "label": "Starship Speed",
+      "y": 970,
+      "h": 37,
+      "x": 1544,
+      "w": 114,
+      "start_time": 60538,
+      "end_time": 73016,
+      "match_to_role": "ss_speed"
+    },
+    {
+      "id": "SS_ALTITUDE",
+      "label": "Starship Altitude",
+      "y": 970,
+      "h": 37,
+      "x": 1707,
+      "w": 114,
+      "start_time": 60538,
+      "end_time": 65410,
+      "match_to_role": "ss_altitude"
+    },
+    {
+      "id": "SH_SPEED",
+      "label": "Superheavy Speed",
+      "y": 970,
+      "h": 37,
+      "x": 98,
+      "w": 114,
+      "start_time": 67551,
+      "end_time": 71825,
+      "match_to_role": "sh_speed"
+    },
+    {
+      "id": "SH_ALTITUDE",
+      "label": "Superheavy Altitude",
+      "y": 970,
+      "h": 37,
+      "x": 262,
+      "w": 114,
+      "start_time": 67551,
+      "end_time": 72999,
+      "match_to_role": "sh_altitude"
+    },
+    {
+      "id": "SS_SPEED",
+      "label": "Starship Speed",
+      "y": 970,
+      "h": 37,
+      "x": 98,
+      "w": 114,
+      "start_time": 73060,
+      "end_time": 180358,
+      "match_to_role": "ss_speed"
+    },
+    {
+      "id": "SS_ALTITUDE",
+      "label": "Starship Altitude",
+      "y": 970,
+      "h": 37,
+      "x": 262,
+      "w": 114,
+      "start_time": 73060,
+      "end_time": 180358,
+      "match_to_role": "ss_altitude"
+    },
+    {
+      "id": "SH_ENGINES",
+      "label": "Superheavy Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 60538,
+      "end_time": 67519,
+      "match_to_role": "sh_engines",
+      "points": {
+        "central_stack": [
+          [154, 980],
+          [146, 994],
+          [163, 994]
+        ],
+        "inner_ring": [
+          [154, 964],
+          [139, 969],
+          [169, 969],
+          [130, 981],
+          [179, 982],
+          [130, 997],
+          [179, 997],
+          [139, 1010],
+          [170, 1010],
+          [154, 1015]
+        ],
+        "outer_ring": [
+          [147, 947],
+          [161, 947],
+          [135, 951],
+          [174, 951],
+          [124, 959],
+          [185, 959],
+          [116, 970],
+          [193, 970],
+          [112, 983],
+          [197, 983],
+          [112, 996],
+          [197, 996],
+          [116, 1009],
+          [193, 1009],
+          [124, 1019],
+          [185, 1020],
+          [174, 1027],
+          [134, 1028],
+          [147, 1032],
+          [161, 1032]
+        ]
+      }
+    },
+    {
+      "id": "SH_ENGINES",
+      "label": "Superheavy Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 71878,
+      "end_time": 73016,
+      "match_to_role": "sh_engines",
+      "points": {
+        "central_stack": [
+          [154, 980],
+          [146, 994],
+          [163, 994]
+        ],
+        "inner_ring": [
+          [154, 964],
+          [139, 969],
+          [169, 969],
+          [130, 981],
+          [179, 982],
+          [130, 997],
+          [179, 997],
+          [139, 1010],
+          [170, 1010],
+          [154, 1015]
+        ],
+        "outer_ring": [
+          [147, 947],
+          [161, 947],
+          [135, 951],
+          [174, 951],
+          [124, 959],
+          [185, 959],
+          [116, 970],
+          [193, 970],
+          [112, 983],
+          [197, 983],
+          [112, 996],
+          [197, 996],
+          [116, 1009],
+          [193, 1009],
+          [124, 1019],
+          [185, 1020],
+          [174, 1027],
+          [134, 1028],
+          [147, 1032],
+          [161, 1032]
+        ]
+      }
+    },
+    {
+      "id": "SS_ENGINES",
+      "label": "Starship Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 65445,
+      "end_time": 77069,
+      "match_to_role": "ss_engines",
+      "points": {
+        "rearth": [
+          [1764, 981],
+          [1756, 995],
+          [1773, 995]
+        ],
+        "rvac": [
+          [1738, 974],
+          [1792, 974],
+          [1764, 1021]
+        ]
+      }
+    },
+    {
+      "id": "SS_ENGINES",
+      "label": "Starship Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 125799,
+      "end_time": 135203,
+      "match_to_role": "ss_engines",
+      "points": {
+        "rearth": [
+          [1764, 981],
+          [1756, 995],
+          [1773, 995]
+        ],
+        "rvac": [
+          [1738, 974],
+          [1792, 974],
+          [1764, 1021]
+        ]
+      }
+    },
+    {
+      "id": "SS_ENGINES",
+      "label": "Starship Engine Points",
+      "y": 0,
+      "h": 0,
+      "x": 0,
+      "w": 0,
+      "start_time": 170213,
+      "end_time": 180358,
+      "match_to_role": "ss_engines",
+      "points": {
+        "rearth": [
+          [1764, 981],
+          [1756, 995],
+          [1773, 995]
+        ],
+        "rvac": [
+          [1738, 974],
+          [1792, 974],
+          [1764, 1021]
+        ]
+      }
+    },
+    {
+      "id": "TIME",
+      "label": "Time Display",
+      "y": 968,
+      "h": 44,
+      "x": 827,
+      "w": 265,
+      "start_time": 60538,
+      "end_time": 180358,
+      "match_to_role": "time"
+    }
+  ]
+}
