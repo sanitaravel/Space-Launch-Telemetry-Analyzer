@@ -388,31 +388,117 @@ def process_complete_video():
     return True
 
 
+def get_config_providers():
+    """Get list of available config providers."""
+    configs_dir = Path('configs')
+    if not configs_dir.exists():
+        return []
+    providers = [d.name for d in configs_dir.iterdir() if d.is_dir()]
+    # Check if there are root .json
+    root_jsons = list(configs_dir.glob('*.json'))
+    if root_jsons:
+        providers.insert(0, 'Root configs')
+    return providers
+
+def get_config_rockets(provider):
+    """Get list of available rockets for a config provider."""
+    if provider == 'Root configs':
+        return []
+    provider_path = Path('configs') / provider
+    if not provider_path.exists():
+        return []
+    return [d.name for d in provider_path.iterdir() if d.is_dir()]
+
+def get_config_files(provider, rocket=None):
+    """Get list of available config files for a provider and optional rocket."""
+    if provider == 'Root configs':
+        configs_dir = Path('configs')
+        return sorted([p.name for p in configs_dir.glob('*.json')])
+    else:
+        if rocket:
+            path = Path('configs') / provider / rocket
+        else:
+            path = Path('configs') / provider
+        if not path.exists():
+            return []
+        return sorted([p.name for p in path.glob('*.json')])
+
 def select_roi_config_menu():
     """Prompt the user to choose an ROI config from the `configs` folder and set it as default.
 
     If the user cancels or no configs are found, nothing changes.
     """
     try:
-        configs_dir = Path('configs')
-        if not configs_dir.exists():
+        providers = get_config_providers()
+        if not providers:
+            print("No config providers found.")
             return None
-
-        json_files = sorted([p.name for p in configs_dir.glob('*.json')])
-        if not json_files:
-            return None
-
-        choices = json_files + ['Use current/default']
-        question = [
-            inquirer.List('config', message='Select ROI config (affects subsequent processing):', choices=choices)
+        
+        choices = providers + ['Use current/default']
+        provider_question = [
+            inquirer.List('provider', message='Select ROI config provider (affects subsequent processing):', choices=choices)
         ]
-        ans = inquirer.prompt(question)
-        if not ans:
+        ans = inquirer.prompt(provider_question)
+        if not ans or ans['provider'] == 'Use current/default':
             return None
-        if ans['config'] == 'Use current/default':
-            return None
-
-        selected = configs_dir / ans['config']
+        
+        provider = ans['provider']
+        
+        if provider == 'Root configs':
+            configs = get_config_files(provider)
+            if not configs:
+                print("No configs found in root.")
+                return None
+            config_question = [
+                inquirer.List(
+                    'config',
+                    message="Select a config",
+                    choices=configs,
+                )
+            ]
+            config_answer = inquirer.prompt(config_question)
+            selected = Path('configs') / config_answer['config']
+        else:
+            rockets = get_config_rockets(provider)
+            if rockets:
+                rocket_question = [
+                    inquirer.List(
+                        'rocket',
+                        message="Select a rocket",
+                        choices=rockets,
+                    )
+                ]
+                rocket_answer = inquirer.prompt(rocket_question)
+                rocket = rocket_answer['rocket']
+                configs = get_config_files(provider, rocket)
+                if not configs:
+                    print(f"No configs found for {provider}/{rocket}.")
+                    return None
+                config_question = [
+                    inquirer.List(
+                        'config',
+                        message="Select a config",
+                        choices=configs,
+                    )
+                ]
+                config_answer = inquirer.prompt(config_question)
+                selected = Path('configs') / provider / rocket / config_answer['config']
+            else:
+                # No rockets, check for configs directly in provider
+                configs = get_config_files(provider)
+                if not configs:
+                    print(f"No configs found for {provider}.")
+                    return None
+                config_question = [
+                    inquirer.List(
+                        'config',
+                        message="Select a config",
+                        choices=configs,
+                    )
+                ]
+                config_answer = inquirer.prompt(config_question)
+                selected = Path('configs') / provider / config_answer['config']
+        
         # Set global default manager to use this config
         set_default_manager_config(str(selected))
         return str(selected)
