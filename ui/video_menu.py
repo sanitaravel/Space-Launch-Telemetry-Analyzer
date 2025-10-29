@@ -108,21 +108,83 @@ def process_random_frame():
     clear_screen()
     return True
 
+def get_launch_providers():
+    """Get list of available launch providers."""
+    flight_recordings_folder = Path('flight_recordings')
+    if not flight_recordings_folder.exists():
+        return []
+    return [d.name for d in flight_recordings_folder.iterdir() if d.is_dir()]
+
+def get_rockets(provider):
+    """Get list of available rockets for a provider."""
+    provider_path = Path('flight_recordings') / provider
+    if not provider_path.exists():
+        return []
+    return [d.name for d in provider_path.iterdir() if d.is_dir()]
+
+def get_flights(provider, rocket):
+    """Get list of available flights (video files) for a provider and rocket."""
+    rocket_path = Path('flight_recordings') / provider / rocket
+    if not rocket_path.exists():
+        return []
+    video_files = []
+    for file in rocket_path.iterdir():
+        if file.is_file() and file.suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']:
+            video_files.append((file.name, str(file.relative_to('.'))))
+    return video_files
+
 def select_video_file():
     """Select a video file from available flight recordings."""
-    video_files = get_video_files_from_flight_recordings()
-    if not video_files:
+    providers = get_launch_providers()
+    if not providers:
+        print("No launch providers found.")
         return None
     
-    video_question = [
+    provider_question = [
         inquirer.List(
-            'video_path',
-            message="Select a video file",
-            choices=video_files,
+            'provider',
+            message="Select a launch provider",
+            choices=providers,
         )
     ]
-    video_answer = inquirer.prompt(video_question)
-    return video_answer['video_path']
+    provider_answer = inquirer.prompt(provider_question)
+    provider = provider_answer['provider']
+    
+    rockets = get_rockets(provider)
+    if not rockets:
+        print(f"No rockets found for provider {provider}.")
+        return None
+    
+    rocket_question = [
+        inquirer.List(
+            'rocket',
+            message="Select a rocket",
+            choices=rockets,
+        )
+    ]
+    rocket_answer = inquirer.prompt(rocket_question)
+    rocket = rocket_answer['rocket']
+    
+    flights = get_flights(provider, rocket)
+    if not flights:
+        print(f"No flights found for {provider}/{rocket}.")
+        return None
+    
+    flight_question = [
+        inquirer.List(
+            'flight',
+            message="Select a flight",
+            choices=[name for name, path in flights],
+        )
+    ]
+    flight_answer = inquirer.prompt(flight_question)
+    selected_name = flight_answer['flight']
+    
+    for name, path in flights:
+        if name == selected_name:
+            return path
+    
+    return None
 
 def get_processing_parameters():
     """Get processing parameters from user."""
