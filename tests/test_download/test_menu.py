@@ -216,11 +216,11 @@ class TestMenuUtilities:
         """Test prompting for continuation after successful download."""
         # Call function
         with patch('builtins.print') as mock_print:
-            result = prompt_continue_after_download(True, 5)
+            result = prompt_continue_after_download(True, "spacex_starship_flight_5")
             
             # Verify results
             assert result is True
-            mock_print.assert_called_with("Download of flight_5 completed successfully.")
+            mock_print.assert_called_with("Download of spacex_starship_flight_5 completed successfully.")
             mock_input.assert_called_once_with("\nPress Enter to continue...")
             mock_clear.assert_called_once()
     
@@ -230,11 +230,11 @@ class TestMenuUtilities:
         """Test prompting for continuation after failed download."""
         # Call function
         with patch('builtins.print') as mock_print:
-            result = prompt_continue_after_download(False, 5)
+            result = prompt_continue_after_download(False, "spacex_starship_flight_5")
             
             # Verify results
             assert result is True
-            mock_print.assert_called_with("Failed to download flight_5.")
+            mock_print.assert_called_with("Failed to download spacex_starship_flight_5.")
             mock_input.assert_called_once_with("\nPress Enter to continue...")
             mock_clear.assert_called_once()
 
@@ -245,14 +245,29 @@ class TestFlightData:
     @patch('download.menu.get_launch_data')
     def test_get_flight_data(self, mock_get_launch_data):
         """Test getting flight data passes through to utils."""
-        # Setup mock
-        mock_get_launch_data.return_value = {"flight_1": {"url": "url1", "type": "youtube"}}
+        # Setup mock with nested structure
+        mock_get_launch_data.return_value = {
+            "spacex": {
+                "starship": {
+                    "flight_1": {"url": "url1", "type": "youtube"}
+                }
+            }
+        }
         
         # Call function
         result = get_flight_data()
         
-        # Verify results
-        assert result == {"flight_1": {"url": "url1", "type": "youtube"}}
+        # Verify results - should be flattened
+        expected = {
+            "spacex_starship_flight_1": {
+                "company": "spacex",
+                "vehicle": "starship", 
+                "flight_key": "flight_1",
+                "type": "youtube",
+                "url": "url1"
+            }
+        }
+        assert result == expected
         mock_get_launch_data.assert_called_once()
     
     @patch('download.menu.get_downloaded_launches')
@@ -261,11 +276,27 @@ class TestFlightData:
         # Setup mock
         mock_get_downloaded.return_value = [2, 3]
         flight_data = {
-            "flight_1": {"url": "url1", "type": "youtube"},
-            "flight_2": {"url": "url2", "type": "twitter/x"},
-            "flight_3": {"url": "url3", "type": "youtube"},
-            "flight_4": {"url": "url4", "type": "twitter"},
-            "invalid_entry": {"url": "url5", "type": "youtube"}
+            "spacex_starship_flight_1": {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": "flight_1",
+                "type": "youtube",
+                "url": "url1"
+            },
+            "spacex_starship_flight_2": {
+                "company": "spacex",
+                "vehicle": "starship", 
+                "flight_key": "flight_2",
+                "type": "twitter/x",
+                "url": "url2"
+            },
+            "spacex_starship_flight_4": {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": "flight_4", 
+                "type": "twitter",
+                "url": "url4"
+            }
         }
         
         # Call function
@@ -273,9 +304,9 @@ class TestFlightData:
         
         # Verify results
         assert len(result) == 2
-        assert ("Flight 1 (YouTube)", 1) in result
-        assert ("Flight 4 (Twitter/X)", 4) in result
-        assert all(flight_num not in [2, 3] for _, flight_num in result)
+        assert ("Flight 1 (Spacex Starship, YouTube)", "spacex_starship_flight_1") in result
+        assert ("Flight 4 (Spacex Starship, Twitter/X)", "spacex_starship_flight_4") in result
+        assert all(unique_key not in ["spacex_starship_flight_2", "spacex_starship_flight_3"] for _, unique_key in result)
         mock_get_downloaded.assert_called_once()
         
     @patch('download.menu.logger')
@@ -285,10 +316,27 @@ class TestFlightData:
         # Setup mock
         mock_get_downloaded.return_value = []
         flight_data = {
-            "flight_1": {"url": "url1", "type": "youtube"},
-            "malformed": {"url": "url2"}, # Missing type
-            "flight_abc": {"url": "url3", "type": "youtube"}, # Non-numeric flight number
-            "not_flight": {"url": "url4", "type": "youtube"} # Not a flight entry
+            "spacex_starship_flight_1": {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": "flight_1",
+                "type": "youtube",
+                "url": "url1"
+            },
+            "invalid1": {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": "malformed",
+                "type": "youtube",
+                "url": "url2"
+            },  # Invalid flight_key
+            "invalid2": {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": "flight_abc",
+                "type": "youtube",
+                "url": "url3"
+            }  # Non-numeric flight number
         }
         
         # Call function
@@ -296,9 +344,9 @@ class TestFlightData:
         
         # Verify results
         assert len(result) == 1
-        assert ("Flight 1 (YouTube)", 1) in result
+        assert ("Flight 1 (Spacex Starship, YouTube)", "spacex_starship_flight_1") in result
         mock_get_downloaded.assert_called_once()
-        assert mock_logger.warning.call_count == 3  # Should log warnings for the 3 invalid entries
+        assert mock_logger.warning.call_count == 2  # Should log warnings for the 2 invalid entries
 
 
 class TestFlightSelection:
@@ -308,14 +356,14 @@ class TestFlightSelection:
     def test_display_flight_selection_menu(self, mock_prompt):
         """Test displaying flight selection menu."""
         # Setup mock
-        mock_prompt.return_value = {'selected_flight': 3}
-        choices = [("Flight 1", 1), ("Flight 3", 3), ("Back", -1)]
+        mock_prompt.return_value = {'selected_flight': "spacex_starship_flight_3"}
+        choices = [("Flight 1", "spacex_starship_flight_1"), ("Flight 3", "spacex_starship_flight_3"), ("Back", -1)]
         
         # Call function
         result = display_flight_selection_menu(choices)
         
         # Verify results
-        assert result == 3
+        assert result == "spacex_starship_flight_3"
         mock_prompt.assert_called_once()
         
         # Check that the question was properly formed
@@ -330,17 +378,23 @@ class TestFlightSelection:
         # Setup mock
         mock_execute.return_value = True
         flight_data = {
-            "flight_5": {"url": "url5", "type": "youtube"}
+            "spacex_starship_flight_5": {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": "flight_5",
+                "type": "youtube",
+                "url": "url5"
+            }
         }
         
         # Call function with mocked print to capture output
         with patch('builtins.print') as mock_print:
-            result = download_selected_flight(flight_data, 5)
+            result = download_selected_flight(flight_data, "spacex_starship_flight_5")
             
             # Verify results
             assert result is True
             mock_execute.assert_called_once_with("youtube", "url5", 5)
-            mock_print.assert_called_with("Downloading flight_5 from url5...")
+            mock_print.assert_called_with("Downloading spacex_starship_flight_5 from url5...")
     
     @patch('download.menu.execute_download')
     def test_download_selected_flight_failure(self, mock_execute):
@@ -348,11 +402,17 @@ class TestFlightSelection:
         # Setup mock
         mock_execute.return_value = False
         flight_data = {
-            "flight_5": {"url": "url5", "type": "twitter/x"}
+            "spacex_starship_flight_5": {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": "flight_5",
+                "type": "twitter/x",
+                "url": "url5"
+            }
         }
         
         # Call function with mocked print
-        result = download_selected_flight(flight_data, 5)
+        result = download_selected_flight(flight_data, "spacex_starship_flight_5")
         
         # Verify results
         assert result is False
@@ -362,16 +422,22 @@ class TestFlightSelection:
         """Test handling of flight not found in data."""
         # Setup
         flight_data = {
-            "flight_5": {"url": "url5", "type": "youtube"}
+            "spacex_starship_flight_5": {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": "flight_5",
+                "type": "youtube",
+                "url": "url5"
+            }
         }
         
         # Call function with mocked print
         with patch('builtins.print') as mock_print:
-            result = download_selected_flight(flight_data, 10)  # Flight 10 not in data
+            result = download_selected_flight(flight_data, "spacex_starship_flight_10")  # Flight 10 not in data
             
             # Verify results
             assert result is False
-            mock_print.assert_called_with("Flight information for flight_10 not found.")
+            mock_print.assert_called_with("Flight information for spacex_starship_flight_10 not found.")
 
 
 class TestErrorHandling:
