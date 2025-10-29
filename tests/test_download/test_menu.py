@@ -615,7 +615,7 @@ class TestPlatformSelection:
         
         # Verify results
         assert result is True
-        mock_twitter.assert_called_once_with('https://twitter.com/video', 5)
+        mock_twitter.assert_called_once_with('https://twitter.com/video', 'flight_5')
     
     @patch('download.menu.download_youtube_video')
     def test_download_from_platform_youtube(self, mock_youtube):
@@ -628,7 +628,7 @@ class TestPlatformSelection:
         
         # Verify results
         assert result is True
-        mock_youtube.assert_called_once_with('https://youtube.com/video', 5)
+        mock_youtube.assert_called_once_with('https://youtube.com/video', 'flight_5')
     
     def test_download_from_platform_unknown(self):
         """Test downloading from an unknown platform."""
@@ -649,11 +649,11 @@ class TestDownloadOperations:
         mock_youtube.return_value = True
         
         # Call function
-        result = execute_download('youtube', 'https://youtube.com/video', 5)
+        result = execute_download('youtube', 'https://youtube.com/video', 'flight_5')
         
         # Verify results
         assert result is True
-        mock_youtube.assert_called_once_with('https://youtube.com/video', 5)
+        mock_youtube.assert_called_once_with('https://youtube.com/video', 'flight_5', None, None)
     
     @patch('download.menu.download_twitter_broadcast')
     def test_execute_download_twitter(self, mock_twitter):
@@ -664,19 +664,19 @@ class TestDownloadOperations:
         # Test all supported Twitter media type variants
         for twitter_type in ["twitter/x", "twitter", "x"]:
             # Call function
-            result = execute_download(twitter_type, 'https://twitter.com/video', 5)
+            result = execute_download(twitter_type, 'https://twitter.com/video', 'flight_5')
             
             # Verify results
             assert result is True
             
         # Verify mock was called three times (once for each type)
         assert mock_twitter.call_count == 3
-        mock_twitter.assert_called_with('https://twitter.com/video', 5)
+        mock_twitter.assert_called_with('https://twitter.com/video', 'flight_5', None, None)
     
     def test_execute_download_unknown(self):
         """Test executing a download with an unknown media type."""
         # Call function with an invalid media type
-        result = execute_download('unknown', 'https://example.com', 5)
+        result = execute_download('unknown', 'https://example.com', 'flight_5')
         
         # Should return False for unknown media type
         assert result is False

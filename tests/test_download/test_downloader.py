@@ -19,7 +19,7 @@ class TestDownloader:
         mock_run.return_value = MagicMock(returncode=0)
         
         # Call function
-        result = download_twitter_broadcast("https://twitter.com/video", 5)
+        result = download_twitter_broadcast("https://twitter.com/video", "flight_5")
         
         # Verify results
         assert result is True
@@ -43,19 +43,18 @@ class TestDownloader:
         """Test Twitter broadcast download with custom output path."""
         # Setup mocks
         mock_run.return_value = MagicMock(returncode=0)
-        custom_path = "custom/path"
         
         # Call function
-        result = download_twitter_broadcast("https://twitter.com/video", 10, output_path=custom_path)
+        result = download_twitter_broadcast("https://twitter.com/video", "flight_10", "custom", "path")
         
         # Verify results
         assert result is True
-        mock_makedirs.assert_called_once_with(custom_path, exist_ok=True)
+        mock_makedirs.assert_called_once_with("flight_recordings/custom/path", exist_ok=True)
         mock_run.assert_called_once()
         
         # Verify the subprocess.run command uses the custom path with video-only parameters
         args, kwargs = mock_run.call_args
-        assert args[0][5] == f"{custom_path}/flight_10.%(ext)s"
+        assert args[0][5] == "flight_recordings/custom/path/flight_10.%(ext)s"
     
     @patch('os.makedirs')
     @patch('subprocess.run')
@@ -66,7 +65,7 @@ class TestDownloader:
         
         # Call function with mocked print
         with patch('builtins.print') as mock_print:
-            result = download_twitter_broadcast("https://twitter.com/video", 5)
+            result = download_twitter_broadcast("https://twitter.com/video", "flight_5")
             
             # Verify results
             assert result is False
@@ -84,7 +83,7 @@ class TestDownloader:
         
         # Call function with mocked print
         with patch('builtins.print') as mock_print:
-            result = download_twitter_broadcast("https://twitter.com/video", 5)
+            result = download_twitter_broadcast("https://twitter.com/video", "flight_5")
             
             # Verify results
             assert result is False
@@ -99,7 +98,7 @@ class TestDownloader:
         mock_run.return_value = MagicMock(returncode=0)
         
         # Call function
-        result = download_youtube_video("https://youtube.com/watch", 5)
+        result = download_youtube_video("https://youtube.com/watch", "flight_5")
         
         # Verify results
         assert result is True
@@ -123,19 +122,18 @@ class TestDownloader:
         """Test YouTube video download with custom output path."""
         # Setup mocks
         mock_run.return_value = MagicMock(returncode=0)
-        custom_path = "custom/path"
         
         # Call function
-        result = download_youtube_video("https://youtube.com/watch", 10, output_path=custom_path)
+        result = download_youtube_video("https://youtube.com/watch", "flight_10", "custom", "path")
         
         # Verify results
         assert result is True
-        mock_makedirs.assert_called_once_with(custom_path, exist_ok=True)
+        mock_makedirs.assert_called_once_with("flight_recordings/custom/path", exist_ok=True)
         mock_run.assert_called_once()
         
         # Verify the subprocess.run command uses the custom path with video-only parameters
         args, kwargs = mock_run.call_args
-        assert args[0][5] == f"{custom_path}/flight_10.%(ext)s"
+        assert args[0][5] == "flight_recordings/custom/path/flight_10.%(ext)s"
     
     @patch('os.makedirs')
     @patch('subprocess.run')
@@ -146,7 +144,7 @@ class TestDownloader:
         
         # Call function with mocked print
         with patch('builtins.print') as mock_print:
-            result = download_youtube_video("https://youtube.com/watch", 5)
+            result = download_youtube_video("https://youtube.com/watch", "flight_5")
             
             # Verify results
             assert result is False
@@ -164,7 +162,7 @@ class TestDownloader:
         
         # Call function with mocked print
         with patch('builtins.print') as mock_print:
-            result = download_youtube_video("https://youtube.com/watch", 5)
+            result = download_youtube_video("https://youtube.com/watch", "flight_5")
             
             # Verify results
             assert result is False

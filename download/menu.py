@@ -203,10 +203,12 @@ def download_selected_flight(flight_data, selected_unique_key):
     
     url = flight_info['url']
     flight_type = flight_info['type']
-    flight_num = int(flight_info['flight_key'].split('_')[1])
+    flight_identifier = flight_info['flight_key']
+    company = flight_info['company']
+    vehicle = flight_info['vehicle']
     
     print(f"Downloading {selected_unique_key} from {url}...")
-    return execute_download(flight_type, url, flight_num)
+    return execute_download(flight_type, url, flight_identifier, company, vehicle)
 
 def handle_error(message):
     """Display error message and prompt to continue."""
@@ -279,16 +281,17 @@ def get_url_and_flight_number(platform):
 
 def download_from_platform(platform, url, flight_number):
     """Execute download based on selected platform."""
+    flight_identifier = f"flight_{flight_number}"
     if platform == 'Twitter/X Broadcast':
-        return download_twitter_broadcast(url, flight_number)
+        return download_twitter_broadcast(url, flight_identifier)
     elif platform == 'YouTube Video':
-        return download_youtube_video(url, flight_number)
+        return download_youtube_video(url, flight_identifier)
     return False
 
-def execute_download(media_type, url, flight_num):
+def execute_download(media_type, url, flight_identifier, company=None, vehicle=None):
     """Execute download based on media type."""
     if media_type == "youtube":
-        return download_youtube_video(url, flight_num)
+        return download_youtube_video(url, flight_identifier, company, vehicle)
     elif media_type in ["twitter/x", "twitter", "x"]:
-        return download_twitter_broadcast(url, flight_num)
+        return download_twitter_broadcast(url, flight_identifier, company, vehicle)
     return False

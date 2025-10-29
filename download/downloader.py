@@ -7,24 +7,31 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-def download_twitter_broadcast(url, flight_number, output_path="flight_recordings"):
+def download_twitter_broadcast(url, flight_identifier, company=None, vehicle=None):
     """
     Downloads a Twitter/X broadcast video using yt-dlp.
 
     Args:
         url (str): The URL of the Twitter/X broadcast.
-        flight_number (int): The flight number to use in the filename.
-        output_path (str): The directory to save the downloaded video.
+        flight_identifier (str): The flight identifier to use in the filename.
+        company (str, optional): The launch provider name for directory structure.
+        vehicle (str, optional): The rocket name for directory structure.
     
     Returns:
         bool: True if successful, False otherwise.
     """
     try:
+        # Determine output path based on company and vehicle
+        if company and vehicle:
+            output_path = f"flight_recordings/{company}/{vehicle}"
+        else:
+            output_path = "flight_recordings"
+        
         # Ensure output directory exists
         os.makedirs(output_path, exist_ok=True)
         
-        # Define output template with flight number
-        output_template = f"{output_path}/flight_{flight_number}.%(ext)s"
+        # Define output template with flight identifier
+        output_template = f"{output_path}/{flight_identifier}.%(ext)s"
         
         logger.info(f"Downloading Twitter broadcast from {url}")
         logger.info(f"Output file will be saved as: {output_template}")
@@ -49,24 +56,31 @@ def download_twitter_broadcast(url, flight_number, output_path="flight_recording
         print(f"An unexpected error occurred: {e}")
         return False
 
-def download_youtube_video(url, flight_number, output_path="flight_recordings"):
+def download_youtube_video(url, flight_identifier, company=None, vehicle=None):
     """
     Downloads a YouTube video using yt-dlp.
 
     Args:
         url (str): The URL of the YouTube video.
-        flight_number (int): The flight number to use in the filename.
-        output_path (str): The directory to save the downloaded video.
+        flight_identifier (str): The flight identifier to use in the filename.
+        company (str, optional): The launch provider name for directory structure.
+        vehicle (str, optional): The rocket name for directory structure.
     
     Returns:
         bool: True if successful, False otherwise.
     """
     try:
+        # Determine output path based on company and vehicle
+        if company and vehicle:
+            output_path = f"flight_recordings/{company}/{vehicle}"
+        else:
+            output_path = "flight_recordings"
+        
         # Ensure output directory exists
         os.makedirs(output_path, exist_ok=True)
         
-        # Define output template with flight number
-        output_template = f"{output_path}/flight_{flight_number}.%(ext)s"
+        # Define output template with flight identifier
+        output_template = f"{output_path}/{flight_identifier}.%(ext)s"
         
         logger.info(f"Downloading YouTube video from {url}")
         logger.info(f"Output file will be saved as: {output_template}")
