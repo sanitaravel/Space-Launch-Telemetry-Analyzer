@@ -86,18 +86,32 @@ def get_flight_data():
 def flatten_flight_data(data):
     """Flatten the nested flight data structure into a flat dict."""
     flat_data = {}
-    for company, vehicles in data.items():
-        for vehicle, flights in vehicles.items():
-            for flight_key, flight_info in flights.items():
-                # Create a unique key
-                unique_key = f"{company}_{vehicle}_{flight_key}"
-                flat_data[unique_key] = {
-                    "company": company,
-                    "vehicle": vehicle,
-                    "flight_key": flight_key,
-                    "type": flight_info.get("type"),
-                    "url": flight_info.get("url")
-                }
+    # Handle both old nested format and new flat format
+    if isinstance(data, dict) and all(isinstance(v, dict) and 'type' in v and 'url' in v for v in data.values()):
+        # New flat format: {"flight_1": {"type": ..., "url": ...}, ...}
+        for flight_key, flight_info in data.items():
+            unique_key = f"spacex_starship_{flight_key}"
+            flat_data[unique_key] = {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": flight_key,
+                "type": flight_info.get("type"),
+                "url": flight_info.get("url")
+            }
+    else:
+        # Old nested format: {"company": {"vehicle": {"flight": {...}}}}
+        for company, vehicles in data.items():
+            for vehicle, flights in vehicles.items():
+                for flight_key, flight_info in flights.items():
+                    # Create a unique key
+                    unique_key = f"{company}_{vehicle}_{flight_key}"
+                    flat_data[unique_key] = {
+                        "company": company,
+                        "vehicle": vehicle,
+                        "flight_key": flight_key,
+                        "type": flight_info.get("type"),
+                        "url": flight_info.get("url")
+                    }
     return flat_data
 
 def get_available_companies(flight_data):
@@ -180,6 +194,76 @@ def select_vehicle(flight_data, company):
     # Convert back to internal format
     return selected_display.lower().replace(' ', '_')
 
+def select_or_create_vehicle(flight_data, company):
+    """Select a vehicle for the given company or create a new one."""
+    vehicles = get_available_vehicles(flight_data, company)
+    if not vehicles:
+        print(f"No existing vehicles found for {company}.")
+    
+    # Format vehicle names for display
+    vehicle_choices = [vehicle.replace('_', ' ').title() for vehicle in vehicles]
+    choices = vehicle_choices + ['Create new vehicle', 'Back to company selection']
+    
+    selected_display = prompt_menu_options(f"Select a vehicle for {company.replace('_', ' ').title()}:", choices)
+    
+    if selected_display == 'Back to company selection':
+        return selected_display
+    elif selected_display == 'Create new vehicle':
+        return create_custom_vehicle()
+    else:
+        # Convert back to internal format
+        return selected_display.lower().replace(' ', '_')
+
+def select_or_create_company(flight_data):
+    """Select a company from available companies or create a new one."""
+    companies = get_available_companies(flight_data)
+    if not companies:
+        print("No existing companies found.")
+    
+    # Format company names for display
+    company_choices = [company.replace('_', ' ').title() for company in companies]
+    choices = company_choices + ['Create new provider', 'Back to platform selection']
+    
+    selected_display = prompt_menu_options("Select a launch provider:", choices)
+    
+    if selected_display == 'Back to platform selection':
+        return selected_display
+    elif selected_display == 'Create new provider':
+        return create_custom_company()
+    else:
+        # Convert back to internal format
+        return selected_display.lower().replace(' ', '_')
+
+def create_custom_company():
+    """Prompt user to create a custom company name."""
+    questions = [
+        inquirer.Text('company', message="Enter the launch provider name", 
+                     validate=lambda _, x: len(x.strip()) > 0)
+    ]
+    
+    answers = inquirer.prompt(questions)
+    
+    if not answers or not answers['company'].strip():
+        return None
+    
+    # Convert to internal format (lowercase, underscores)
+    return answers['company'].strip().lower().replace(' ', '_')
+
+def create_custom_vehicle():
+    """Prompt user to create a custom vehicle name."""
+    questions = [
+        inquirer.Text('vehicle', message="Enter the rocket name", 
+                     validate=lambda _, x: len(x.strip()) > 0)
+    ]
+    
+    answers = inquirer.prompt(questions)
+    
+    if not answers or not answers['vehicle'].strip():
+        return None
+    
+    # Convert to internal format (lowercase, underscores)
+    return answers['vehicle'].strip().lower().replace(' ', '_')
+
 def select_flight(flight_data, company, vehicle):
     """Select a flight for the given company and vehicle."""
     available_flights = get_available_flights_for_vehicle(flight_data, company, vehicle)
@@ -244,7 +328,27 @@ def download_from_custom_url():
     if not url:
         return handle_error("Download cancelled.")
     
-    success = download_from_platform(platform, url, flight_number)
+    # Get flight data for company/vehicle selection
+    flight_data = get_flight_data()
+    if not flight_data:
+        print("Could not retrieve flight data for provider/vehicle selection.")
+        print("Continuing with download without provider/vehicle information...")
+        company = None
+        vehicle = None
+    else:
+        # Prompt for company (launch provider)
+        company = select_or_create_company(flight_data)
+        if company == 'Back to platform selection':
+            clear_screen()
+            return download_from_custom_url()
+        
+        # Prompt for vehicle (rocket)
+        vehicle = select_or_create_vehicle(flight_data, company)
+        if vehicle == 'Back to company selection':
+            clear_screen()
+            return download_from_custom_url()
+    
+    success = download_from_platform(platform, url, flight_number, company, vehicle)
     
     if success:
         print("Download completed successfully.")
@@ -279,13 +383,13 @@ def get_url_and_flight_number(platform):
     
     return answers['url'].strip(), int(answers['flight_number'])
 
-def download_from_platform(platform, url, flight_number):
+def download_from_platform(platform, url, flight_number, company=None, vehicle=None):
     """Execute download based on selected platform."""
     flight_identifier = f"flight_{flight_number}"
     if platform == 'Twitter/X Broadcast':
-        return download_twitter_broadcast(url, flight_identifier)
+        return download_twitter_broadcast(url, flight_identifier, company, vehicle)
     elif platform == 'YouTube Video':
-        return download_youtube_video(url, flight_identifier)
+        return download_youtube_video(url, flight_identifier, company, vehicle)
     return False
 
 def execute_download(media_type, url, flight_identifier, company=None, vehicle=None):

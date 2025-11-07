@@ -74,6 +74,21 @@ def display_image(image: np.ndarray, text: str) -> None:
         # this will raise an error from OpenCV; catch and log a warning and
         # continue without raising so callers can remain headless-friendly.
         cv2.imshow(text, image)
+        
+        # Try to bring window to front (Windows-specific)
+        try:
+            cv2.setWindowProperty(text, cv2.WND_PROP_TOPMOST, 1)
+        except:
+            pass  # Ignore if not supported
+        
+        # Resize window if image is very small
+        height, width = image.shape[:2]
+        if width < 200 or height < 200:
+            cv2.resizeWindow(text, max(width, 400), max(height, 300))
+        
+        print(f"\nDisplaying ROI: {text}")
+        print("Press any key in the image window to continue...")
+        
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     except cv2.error as e:

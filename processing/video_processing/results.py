@@ -49,15 +49,17 @@ def calculate_real_times(results: List[Dict], zero_time_frame: Optional[int], fp
     return results
 
 
-def save_results(results: List[Dict], launch_number: int) -> None:
+def save_results(results: List[Dict], provider: str, vehicle_type: str, launch_number: int) -> None:
     """
     Save the processing results to a file.
 
     Args:
         results (List[Dict]): The processing results.
+        provider (str): The launch provider (e.g., 'spacex').
+        vehicle_type (str): The vehicle type (e.g., 'starship').
         launch_number (int): The launch number for saving results.
     """
-    folder_name = os.path.join("results", f"launch_{launch_number}")
+    folder_name = os.path.join("results", provider, vehicle_type, f"launch_{launch_number}")
     os.makedirs(folder_name, exist_ok=True)
 
     result_path = os.path.join(folder_name, "results.json")
@@ -69,7 +71,7 @@ def save_results(results: List[Dict], launch_number: int) -> None:
         logger.error(f"Error saving results: {str(e)}")
         
         # Try to save to a backup location
-        backup_path = os.path.join("results", f"backup_results_{launch_number}.json")
+        backup_path = os.path.join("results", f"backup_results_{provider}_{vehicle_type}_{launch_number}.json")
         try:
             with open(backup_path, "w") as f:
                 json.dump(results, f, indent=4)

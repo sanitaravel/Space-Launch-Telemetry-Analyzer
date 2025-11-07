@@ -10,7 +10,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def validate_json(data: list) -> bool:
+def validate_json(data: list) -> tuple:
     """
     Validate the structure of the JSON data.
 
@@ -18,14 +18,25 @@ def validate_json(data: list) -> bool:
         data (list): The JSON data to validate.
 
     Returns:
-        bool: True if the structure is valid, False otherwise.
+        tuple: (is_valid, invalid_entry, data_structure_type)
     """
-    required_keys = {"frame_number", "superheavy",
-                     "starship", "time", "real_time_seconds"}
-    for entry in data:
-        if not required_keys.issubset(entry.keys()):
-            return (False, entry)
-    return (True, None)
+    if not data:
+        return (False, None, None)
+    
+    first_entry = data[0]
+    
+    # Check for SpaceX Starship structure
+    spacex_keys = {"frame_number", "superheavy", "starship", "time", "real_time_seconds"}
+    if spacex_keys.issubset(first_entry.keys()):
+        return (True, None, "spacex_starship")
+    
+    # Check for Blue Origin New Glenn structure
+    blue_origin_keys = {"frame_number", "vehicles", "time", "real_time_seconds"}
+    if blue_origin_keys.issubset(first_entry.keys()):
+        return (True, None, "blue_origin_new_glenn")
+    
+    # If neither structure matches, return invalid
+    return (False, first_entry, None)
 
 
 def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
@@ -40,56 +51,67 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
     logger.info("Cleaning dataframe and removing outliers")
     
-    # Step 1: Ensure numeric values
-    for column in ['starship.speed', 'superheavy.speed', 'starship.altitude', 'superheavy.altitude']:
-        df[column] = pd.to_numeric(df[column], errors='coerce')
+    # Step 1: Ensure numeric values for existing columns
+    expected_columns = ['starship.speed', 'superheavy.speed', 'starship.altitude', 'superheavy.altitude']
+    for column in expected_columns:
+        if column in df.columns:
+            df[column] = pd.to_numeric(df[column], errors='coerce')
         
-    # Log the number of NaN values after conversion
-    nan_counts = df[['starship.speed', 'superheavy.speed', 'starship.altitude', 'superheavy.altitude']].isna().sum()
-    logger.debug(f"NaN values after numeric conversion: {nan_counts.to_dict()}")
+    # Log the number of NaN values after conversion for existing columns
+    existing_columns = [col for col in expected_columns if col in df.columns]
+    if existing_columns:
+        nan_counts = df[existing_columns].isna().sum()
+        logger.debug(f"NaN values after numeric conversion: {nan_counts.to_dict()}")
 
-    # Step 2: Remove impossible values
-    prev_count = (~df['starship.speed'].isna()).sum()
-    df['starship.speed'] = df['starship.speed'].clip(lower=0, upper=28000)
-    current_count = (~df['starship.speed'].isna()).sum()
-    logger.debug(f"Clipped {prev_count - current_count} impossible values from starship.speed")
+    # Step 2: Remove impossible values for existing columns
+    if 'starship.speed' in df.columns:
+        prev_count = (~df['starship.speed'].isna()).sum()
+        df['starship.speed'] = df['starship.speed'].clip(lower=0, upper=28000)
+        current_count = (~df['starship.speed'].isna()).sum()
+        logger.debug(f"Clipped {prev_count - current_count} impossible values from starship.speed")
     
-    prev_count = (~df['superheavy.speed'].isna()).sum()
-    df['superheavy.speed'] = df['superheavy.speed'].clip(lower=0, upper=6000)
-    current_count = (~df['superheavy.speed'].isna()).sum()
-    logger.debug(f"Clipped {prev_count - current_count} impossible values from superheavy.speed")
+    if 'superheavy.speed' in df.columns:
+        prev_count = (~df['superheavy.speed'].isna()).sum()
+        df['superheavy.speed'] = df['superheavy.speed'].clip(lower=0, upper=6000)
+        current_count = (~df['superheavy.speed'].isna()).sum()
+        logger.debug(f"Clipped {prev_count - current_count} impossible values from superheavy.speed")
     
-    prev_count = (~df['starship.altitude'].isna()).sum()
-    df['starship.altitude'] = df['starship.altitude'].clip(lower=0, upper=200)
-    current_count = (~df['starship.altitude'].isna()).sum()
-    logger.debug(f"Clipped {prev_count - current_count} impossible values from starship.altitude")
+    if 'starship.altitude' in df.columns:
+        prev_count = (~df['starship.altitude'].isna()).sum()
+        df['starship.altitude'] = df['starship.altitude'].clip(lower=0, upper=200)
+        current_count = (~df['starship.altitude'].isna()).sum()
+        logger.debug(f"Clipped {prev_count - current_count} impossible values from starship.altitude")
     
-    prev_count = (~df['superheavy.altitude'].isna()).sum()
-    df['superheavy.altitude'] = df['superheavy.altitude'].clip(
-        lower=0, upper=100)
-    current_count = (~df['superheavy.altitude'].isna()).sum()
-    logger.debug(f"Clipped {prev_count - current_count} impossible values from superheavy.altitude")
+    if 'superheavy.altitude' in df.columns:
+        prev_count = (~df['superheavy.altitude'].isna()).sum()
+        df['superheavy.altitude'] = df['superheavy.altitude'].clip(lower=0, upper=100)
+        current_count = (~df['superheavy.altitude'].isna()).sum()
+        logger.debug(f"Clipped {prev_count - current_count} impossible values from superheavy.altitude")
 
-    # Step 3: Detect abrupt changes
-    df['starship.speed_diff'] = df['starship.speed'].diff().abs()
-    abrupt_changes = (df['starship.speed_diff'] > 50).sum()
-    logger.debug(f"Detected {abrupt_changes} abrupt changes in starship.speed")
-    df.loc[df['starship.speed_diff'] > 50, 'starship.speed'] = None
+    # Step 3: Detect abrupt changes for existing columns
+    if 'starship.speed' in df.columns:
+        df['starship.speed_diff'] = df['starship.speed'].diff().abs()
+        abrupt_changes = (df['starship.speed_diff'] > 50).sum()
+        logger.debug(f"Detected {abrupt_changes} abrupt changes in starship.speed")
+        df.loc[df['starship.speed_diff'] > 50, 'starship.speed'] = None
     
-    df['superheavy.speed_diff'] = df['superheavy.speed'].diff().abs()
-    abrupt_changes = (df['superheavy.speed_diff'] > 50).sum()
-    logger.debug(f"Detected {abrupt_changes} abrupt changes in superheavy.speed")
-    df.loc[df['superheavy.speed_diff'] > 50, 'superheavy.speed'] = None
+    if 'superheavy.speed' in df.columns:
+        df['superheavy.speed_diff'] = df['superheavy.speed'].diff().abs()
+        abrupt_changes = (df['superheavy.speed_diff'] > 50).sum()
+        logger.debug(f"Detected {abrupt_changes} abrupt changes in superheavy.speed")
+        df.loc[df['superheavy.speed_diff'] > 50, 'superheavy.speed'] = None
     
-    df['starship.altitude_diff'] = df['starship.altitude'].diff().abs()
-    abrupt_changes = (df['starship.altitude_diff'] > 1).sum()
-    logger.debug(f"Detected {abrupt_changes} abrupt changes in starship.altitude")
-    df.loc[df['starship.altitude_diff'] > 1, 'starship.altitude'] = None
+    if 'starship.altitude' in df.columns:
+        df['starship.altitude_diff'] = df['starship.altitude'].diff().abs()
+        abrupt_changes = (df['starship.altitude_diff'] > 1).sum()
+        logger.debug(f"Detected {abrupt_changes} abrupt changes in starship.altitude")
+        df.loc[df['starship.altitude_diff'] > 1, 'starship.altitude'] = None
     
-    df['superheavy.altitude_diff'] = df['superheavy.altitude'].diff().abs()
-    abrupt_changes = (df['superheavy.altitude_diff'] > 1).sum()
-    logger.debug(f"Detected {abrupt_changes} abrupt changes in superheavy.altitude")
-    df.loc[df['superheavy.altitude_diff'] > 1, 'superheavy.altitude'] = None
+    if 'superheavy.altitude' in df.columns:
+        df['superheavy.altitude_diff'] = df['superheavy.altitude'].diff().abs()
+        abrupt_changes = (df['superheavy.altitude_diff'] > 1).sum()
+        logger.debug(f"Detected {abrupt_changes} abrupt changes in superheavy.altitude")
+        df.loc[df['superheavy.altitude_diff'] > 1, 'superheavy.altitude'] = None
 
     logger.info("DataFrame cleaning complete")
     return df
@@ -206,7 +228,7 @@ def prepare_fuel_data_columns(df: pd.DataFrame) -> pd.DataFrame:
                 
                 # If no column found, create it with zeros
                 if not found:
-                    logger.warning(f"No fuel data found for {vehicle} {fuel_type}, creating empty column")
+                    logger.debug(f"No fuel data found for {vehicle} {fuel_type}, creating empty column")
                     df[f'{vehicle}.fuel.{fuel_type}.fullness'] = 0
     
     return df
@@ -232,8 +254,9 @@ def normalize_fuel_levels(df: pd.DataFrame) -> pd.DataFrame:
         'real_time_seconds'
     ]
     
-    if not all(col in df.columns for col in required_cols):
-        logger.warning("Missing required columns for fuel normalization")
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        logger.warning(f"Missing required columns for fuel normalization: {missing_cols}")
         return df
     
     # Process each row
@@ -295,9 +318,26 @@ def load_and_clean_data(json_path: str) -> pd.DataFrame:
         logger.info(f"Loaded {len(data)} records from JSON file")
         
         # Validate the JSON data structure
-        is_valid, invalid_entry = validate_json(data)
+        is_valid, invalid_entry, data_structure = validate_json(data)
         if not is_valid:
             logger.warning(f"Invalid data structure in JSON. Example invalid entry: {invalid_entry}")
+            return pd.DataFrame()
+        
+        logger.info(f"Detected data structure: {data_structure}")
+        
+        # Normalize data structure based on type
+        if data_structure == "blue_origin_new_glenn":
+            # Convert Blue Origin structure to SpaceX-like structure for compatibility
+            for entry in data:
+                if "vehicles" in entry:
+                    vehicles = entry["vehicles"]
+                    # Map new_glenn to superheavy and second_stage to starship
+                    if "new_glenn" in vehicles:
+                        entry["superheavy"] = vehicles["new_glenn"]
+                    if "second_stage" in vehicles:
+                        entry["starship"] = vehicles["second_stage"]
+                    # Remove the vehicles key
+                    del entry["vehicles"]
         
         # Use json_normalize with sep='.' to flatten nested dictionaries with dot notation
         df = pd.json_normalize(data)

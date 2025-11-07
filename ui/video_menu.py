@@ -102,8 +102,57 @@ def process_random_frame():
         end_frame = -1 if end_time == -1 else int(end_time * fps)
 
     logger.debug(f"Processing random frame from {answers['video_path']} with start_frame={start_frame}, end_frame={end_frame}")
-    process_video_frame(
+    result = process_video_frame(
         answers['video_path'], answers['display_rois'], answers['debug'] or DEBUG_MODE, start_frame, end_frame)
+    
+    # Display results
+    if result:
+        if 'error' in result:
+            print(f"Error processing frame: {result['error']}")
+        else:
+            print(f"Processed frame {result.get('frame_number', 'unknown')}")
+            vehicles = result.get('vehicles', {})
+            time_data = result.get('time', {})
+            
+            if vehicles:
+                for vehicle, data in vehicles.items():
+                    speed = data.get('speed')
+                    altitude = data.get('altitude')
+                    fuel = data.get('fuel', {})
+                    engines = data.get('engines', {})
+                    
+                    print(f"  {vehicle.title()}:")
+                    if speed is not None:
+                        print(f"    Speed: {speed}")
+                    if altitude is not None:
+                        print(f"    Altitude: {altitude}")
+                    if fuel:
+                        lox = fuel.get('lox', {}).get('fullness')
+                        ch4 = fuel.get('ch4', {}).get('fullness')
+                        if lox is not None or ch4 is not None:
+                            print(f"    Fuel: LOX {lox}%, CH4 {ch4}%")
+                    if engines:
+                        print(f"    Engines: {engines}")
+            
+            if time_data:
+                sign = time_data.get('sign', '')
+                h = time_data.get('hours', 0)
+                m = time_data.get('minutes', 0)
+                s = time_data.get('seconds', 0)
+                print(f"  Time: {sign}{h:02}:{m:02}:{s:02}")
+            
+            if answers['display_rois']:
+                # Check if any ROIs were active
+                from ocr.roi_manager import get_default_manager
+                manager = get_default_manager()
+                active_rois = manager.get_active_rois(result.get('frame_number'))
+                if not active_rois:
+                    print("  Note: No ROIs were active at this frame. Try selecting a different time range or ROI config.")
+                else:
+                    print(f"  Displayed {len(active_rois)} active ROIs")
+    else:
+        print("No results returned from frame processing")
+    
     input("\nPress Enter to continue...")
     clear_screen()
     return True
@@ -256,6 +305,16 @@ def process_video_with_parameters(video_path, launch_number, batch_size, sample_
     """Compatibility wrapper: convert time borders to frames and call iterate_through_frames."""
     from main import DEBUG_MODE  # Import here to avoid circular imports
 
+    # Parse provider and vehicle_type from video_path
+    path_parts = Path(video_path).parts
+    if len(path_parts) >= 3 and path_parts[0] == 'flight_recordings':
+        provider = path_parts[1]
+        vehicle_type = path_parts[2]
+    else:
+        # Fallback to defaults if path structure is unexpected
+        provider = "spacex"
+        vehicle_type = "starship"
+
     logger.debug(f"Processing complete video {video_path} with launch_number={launch_number}, "
                 f"batch_size={batch_size}, sample_rate={sample_rate}")
     logger.debug(f"Borders: start_time={start_time}, end_time={end_time}, "
@@ -277,7 +336,7 @@ def process_video_with_parameters(video_path, launch_number, batch_size, sample_
             converted_end_frame = int(end_time * fps)
 
     iterate_through_frames(
-        video_path, int(launch_number), debug=DEBUG_MODE, 
+        video_path, provider, vehicle_type, int(launch_number), debug=DEBUG_MODE, 
         batch_size=batch_size, sample_rate=sample_rate,
         start_frame=converted_start_frame, end_frame=converted_end_frame)
 
@@ -289,6 +348,16 @@ def process_complete_video():
     video_path = select_video_file()
     if not video_path:
         return True
+    
+    # Parse provider and vehicle_type from video_path
+    path_parts = Path(video_path).parts
+    if len(path_parts) >= 3 and path_parts[0] == 'flight_recordings':
+        provider = path_parts[1]
+        vehicle_type = path_parts[2]
+    else:
+        # Fallback to defaults if path structure is unexpected
+        provider = "spacex"
+        vehicle_type = "starship"
     
     logger.debug("Starting complete video processing")
     
@@ -378,7 +447,7 @@ def process_complete_video():
 
     logger.info(f"Using frames: {converted_start_frame} - {converted_end_frame}")
     iterate_through_frames(
-        video_path, int(answers['launch_number']), debug=DEBUG_MODE,
+        video_path, provider, vehicle_type, int(answers['launch_number']), debug=DEBUG_MODE,
         batch_size=batch_size, sample_rate=sample_rate,
         start_frame=converted_start_frame, end_frame=converted_end_frame
     )
