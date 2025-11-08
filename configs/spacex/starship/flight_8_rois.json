@@ -1,5 +1,9 @@
 {
-  "version": 3,
+  "version": 4,
+  "video_source": {
+    "type": "twitter/x",
+    "url": "https://x.com/i/broadcasts/1lPKqMQbAWLKb"
+  },
   "time_unit": "frames",
   "vehicles": ["superheavy", "starship"],
   "rois": [

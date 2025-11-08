@@ -1,9 +1,13 @@
 {
-  "version": 2,
+  "version": 3,
+  "video_source": {
+    "type": "twitter/x",
+    "url": "https://x.com/i/broadcasts/1mrGmBjyEZgJy"
+  },
   "time_unit": "frames",
   "vehicles": ["superheavy", "starship"],
   "rois": [
-    { 
+    {
       "id": "speed",
       "vehicle": "superheavy",
       "label": "Superheavy Speed",

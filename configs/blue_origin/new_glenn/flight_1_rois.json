@@ -1,5 +1,9 @@
 {
-  "version": 1,
+  "version": 2,
+  "video_source": {
+    "type": "youtube",
+    "url": "https://www.youtube.com/watch?v=KXysNxbGdCg"
+  },
   "time_unit": "frames",
   "vehicles": ["new_glenn", "second_stage"],
   "rois": [
