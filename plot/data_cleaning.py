@@ -24,24 +24,6 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     from .data_processing import detect_vehicles
     vehicles = detect_vehicles(df)
     
-    # Define reasonable limits for different data types
-    limits = {
-        'speed': {
-            'default': {'min': 0, 'max': 30000},  # General speed limit
-            'superheavy': {'min': 0, 'max': 6000},  # Booster speed limit
-            'starship': {'min': 0, 'max': 28000},   # Starship speed limit
-            'new_glenn': {'min': 0, 'max': 2000},   # New Glenn booster
-            'second_stage': {'min': 0, 'max': 28000} # Upper stage
-        },
-        'altitude': {
-            'default': {'min': 0, 'max': 500},      # General altitude limit
-            'superheavy': {'min': 0, 'max': 100},   # Booster altitude limit
-            'starship': {'min': 0, 'max': 200},     # Starship altitude limit
-            'new_glenn': {'min': 0, 'max': 150},    # New Glenn
-            'second_stage': {'min': 0, 'max': 200}  # Upper stage
-        }
-    }
-    
     # Step 1: Ensure numeric values for vehicle columns
     vehicle_columns = []
     for vehicle in vehicles:
@@ -55,22 +37,6 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     if vehicle_columns:
         nan_counts = df[vehicle_columns].isna().sum()
         logger.debug(f"NaN values after numeric conversion: {nan_counts.to_dict()}")
-
-    # Step 2: Remove impossible values for each vehicle and data type
-    for vehicle in vehicles:
-        for data_type in ['speed', 'altitude']:
-            col_name = f"{vehicle}.{data_type}"
-            if col_name in df.columns:
-                # Get limits for this vehicle/data type
-                vehicle_limits = limits[data_type].get(vehicle, limits[data_type]['default'])
-                
-                prev_count = (~df[col_name].isna()).sum()
-                df[col_name] = df[col_name].clip(lower=vehicle_limits['min'], upper=vehicle_limits['max'])
-                current_count = (~df[col_name].isna()).sum()
-                
-                clipped = prev_count - current_count
-                if clipped > 0:
-                    logger.debug(f"Clipped {clipped} impossible values from {col_name}")
 
     # Step 3: Detect abrupt changes for each vehicle and data type
     change_thresholds = {
