@@ -1,6 +1,6 @@
-# Starship Analyzer
+# Space Launch Telemetry Analyzer
 
-A small toolkit to analyze Starship flight recordings and extract telemetry and events from video.
+A small toolkit to analyze space launch flight recordings and extract telemetry and events from video.
 
 This repository contains video-processing utilities, OCR-based telemetry extraction, plotting, and helper scripts used to analyze flight recordings (stored under `flight_recordings/`). It is intended for local analysis and lightweight automation (for example, publishing notable events).
 
@@ -9,16 +9,16 @@ This repository contains video-processing utilities, OCR-based telemetry extract
 - Extract text overlays and telemetry from videos using OCR (see `ocr/`).
 - Process frames and regions-of-interest (ROIs) defined in `configs/`.
 - Produce plots and analysis artifacts into `plot/` and `results/`.
-- Helper scripts for downloading, preprocessing and broadcasting results (see `download/` and `twitter_broadcast.test_script.py`).
+- Download videos from multiple platforms (Twitter/X broadcasts and YouTube) and organize them by company and vehicle (see `download/`).
 
 ## Repository layout (important files/folders)
 
 - `main.py` — primary entry point for running analyses.
-- `download/` — video download and preparation helpers.
+- `download/` — video download utilities supporting multiple platforms (Twitter/X broadcasts and YouTube) with automatic organization by company and vehicle.
 - `ocr/` — OCR helpers and models integration.
-- `configs/` — ROI and configuration JSON files (e.g. `default_rois.json`).
-- `flight_recordings/` — sample and raw MP4 recordings used for analysis.
-- `plot/`, `results/` — output directories for plots and results.
+- `configs/` — ROI and configuration JSON files, organized by company and vehicle (e.g., `configs/spacex/starship/`, with `default_rois.json` at the root).
+- `flight_recordings/` — sample and raw MP4 recordings used for analysis, organized by company and vehicle (e.g., `flight_recordings/spacex/starship/`, `flight_recordings/blue_origin/new_glenn/`).
+- `plot/`, `results/` — output directories for plots and results, organized by company and vehicle (e.g., `results/spacex/starship/`, `results/blue_origin/new_glenn/`). Also includes comparison results across launches.
 - `logs/` — runtime log files created when running the tools.
 - `tests/` — unit and integration tests.
 - `requirements.txt` — Python dependencies.
@@ -95,26 +95,60 @@ See `python main.py --help` for the full set of options and menu-driven features
 
 Region-of-interest (ROI) and flight-specific settings live in `configs/`. The file `configs/default_rois.json` provides a baseline. To analyze a recording with a specific ROI configuration, point the analysis to that JSON or copy/modify it for a flight.
 
+### Available ROI Configurations
+
+Pre-configured ROI files are available for specific flights:
+
+- **SpaceX Starship**:
+  - Flight 6: `configs/spacex/starship/flight_6_rois.json`
+  - Flight 7: `configs/spacex/starship/flight_7_rois.json`
+  - Flight 8: `configs/spacex/starship/flight_8_rois.json`
+  - Flight 9: `configs/spacex/starship/flight_9_rois.json`
+  - Flight 10: `configs/spacex/starship/flight_10_rois.json`
+  - Flight 11: `configs/spacex/starship/flight_11_rois.json`
+
+- **Blue Origin New Glenn**:
+  - Flight 1: `configs/blue_origin/new_glenn/flight_1_rois.json`
+
 Example ROI configuration (JSON) matching the project's schema:
 
 ```json
 {
-  "version": 2,
+  "version": 5,
+  "video_source": {
+    "type": "twitter/x",
+    "url": "https://x.com/i/broadcasts/1OwxWXMRAXmKQ"
+  },
   "time_unit": "frames",
+  "vehicles": ["superheavy", "starship"],
   "rois": [
     {
-      "id": "SS_SPEED",
-      "label": "Starship Speed",
+      "id": "speed",
+      "vehicle": "superheavy",
+      "label": "Superheavy Speed",
       "x": 1544,
       "y": 970,
       "w": 114,
       "h": 37,
       "start_time": 83301,
       "end_time": 88329,
-      "match_to_role": "ss_speed"
+      "measurement_unit": "km/h"
     },
     {
-      "id": "TIME",
+      "id": "altitude",
+      "vehicle": "superheavy",
+      "label": "Superheavy Altitude",
+      "x": 1707,
+      "y": 970,
+      "w": 114,
+      "h": 37,
+      "start_time": 83301,
+      "end_time": 88329,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
       "label": "Time Display",
       "x": 827,
       "y": 968,
@@ -122,7 +156,7 @@ Example ROI configuration (JSON) matching the project's schema:
       "h": 44,
       "start_time": 83301,
       "end_time": 168659,
-      "match_to_role": "time"
+      "measurement_unit": "[+-]\\d{2}:\\d{2}:\\d{2}"
     }
   ]
 }
@@ -133,10 +167,16 @@ Example ROI configuration (JSON) matching the project's schema:
 Below are all fields observed in the `configs/` ROI files and their meanings. Use this as a quick reference when creating or editing ROI JSON files.
 
 - `version` (integer)
-  - Schema version for the ROI file. Increment when the format changes. Examples: `1`, `2`.
+  - Schema version for the ROI file. Increment when the format changes. Examples: `2`, `5`.
+
+- `video_source` (object)
+  - Information about the video source. Contains `type` (e.g., "twitter/x") and `url` fields.
 
 - `time_unit` (string)
   - Unit used for `start_time` and `end_time`. Common values: `frames`, `seconds`.
+
+- `vehicles` (array of strings)
+  - List of vehicles present in the flight (e.g., `["superheavy", "starship"]`).
 
 - `rois` (array of objects)
   - List of ROI objects; each object describes a single region to process.
@@ -144,10 +184,13 @@ Below are all fields observed in the `configs/` ROI files and their meanings. Us
 Per-ROI object fields
 
 - `id` (string)
-  - Short unique identifier for the ROI (e.g., `SS_SPEED`, `TIME`). Used to reference the ROI in logs and outputs.
+  - Short unique identifier for the ROI (e.g., `speed`, `altitude`, `time`). Used to reference the ROI in logs and outputs.
+
+- `vehicle` (string or null)
+  - The vehicle this ROI applies to (e.g., `superheavy`, `starship`). Use `null` for ROIs that apply to the entire scene.
 
 - `label` (string)
-  - Human-friendly description of the ROI (e.g., `Starship Speed`). Used in UIs and reports.
+  - Human-friendly description of the ROI (e.g., `Superheavy Speed`). Used in UIs and reports.
 
 - `x` (integer)
   - X coordinate (pixels) of the top-left corner of the ROI, relative to the frame's left edge.
@@ -167,19 +210,27 @@ Per-ROI object fields
 - `end_time` (integer or null)
   - When the ROI stops being active. Interpreted in the unit specified by `time_unit`. Use `null` if the ROI remains active until the end of the recording.
 
-- `match_to_role` (string)
-  - Logical role name used by the analyzer to map OCR or detections to specific telemetry fields (for example `ss_speed`, `sh_altitude`, `time`).
+- `measurement_unit` (string)
+  - The unit of measurement for the data in this ROI (e.g., `km/h`, `km`, regex pattern for time like `[+-]\\d{2}:\\d{2}:\\d{2}`).
+
+- `points` (object, optional)
+  - For engine detection ROIs, defines key points for engine flame analysis. Contains arrays of [x,y] coordinates for different engine components.
+
+- `match_to_role` (string, optional)
+  - Legacy field for mapping to telemetry fields (e.g., `ss_altitude`). Used in older config versions.
 
 Notes and best practices
 
 - Coordinates and sizes are integer pixel values — double-check these values at the video resolution you are analyzing (e.g., 1920x1080 vs 1280x720).
 - Use `start_time`/`end_time` to avoid running OCR on regions that are not present for the whole recording (this speeds up processing).
-- Keep `id` values unique within a single file. You may reuse `match_to_role` values across ROIs if they map to the same telemetry field across different time ranges.
+- Keep `id` values unique within a single file. You may reuse `id` values across ROIs if they apply to different vehicles or time ranges.
 - When converting `seconds` to `frames`, multiply seconds by the video's frames-per-second (FPS). The project does not assume a default FPS — supply `time_unit` and values consistent with your workflow.
 - `time_unit` indicates the unit used for `start_time`/`end_time` (e.g., `frames` or `seconds`).
 - Coordinates are in pixels (`x`, `y`, `w`, `h`) relative to the top-left of the frame.
 - `start_time` and `end_time` define when the ROI is active in the recording.
-- Save custom configs into the `configs/` directory and name them clearly (e.g., `flight_9_rois.json`).
+- `measurement_unit` specifies the expected format or unit of the extracted data (e.g., units like "km/h" or regex patterns for time).
+- For engine detection, use the `points` field to define key coordinates for flame analysis.
+- Save custom configs into the appropriate `configs/{company}/{vehicle}/` subdirectory and name them clearly (e.g., `configs/spacex/starship/flight_9_rois.json`).
 - The analyzer will read the selected JSON and apply OCR or detection routines to each ROI; check logs in `logs/` for ROI processing messages.
 
 ## Contributing

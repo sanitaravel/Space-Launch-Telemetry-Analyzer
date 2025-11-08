@@ -1,6 +1,6 @@
-# Running Tests for Starship Analyzer
+# Running Tests for Space Launch Telemetry Analyzer
 
-This directory contains tests for the Starship Analyzer application using the `pytest` framework.
+This directory contains tests for the Space Launch Telemetry Analyzer application using the `pytest` framework.
 
 ## Setup
 
