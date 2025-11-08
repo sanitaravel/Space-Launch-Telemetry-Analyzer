@@ -15,8 +15,22 @@ logger = get_logger(__name__)
 # This module is now fully config-driven. ROI coordinates and activation windows
 # are provided by `ocr.roi_manager.ROIManager` via `get_default_manager()`.
 
+def slice_roi(img, y, h, x, w):
+    """Helper function to safely slice an ROI from an image."""
+    ih, iw = img.shape[0], img.shape[1]
+    y0 = max(0, int(y))
+    x0 = max(0, int(x))
+    y1 = min(ih, int(y + h))
+    x1 = min(iw, int(x + w))
+    if y0 >= y1 or x0 >= x1:
+        return None
+    return img[y0:y1, x0:x1]
+
 def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager: Optional[ROIManager] = None, frame_idx: Optional[int] = None) -> Dict[str, Optional[np.ndarray]]:
     """
+    DEPRECATED: This function is deprecated and will be removed in a future version.
+    ROI preprocessing is now handled directly in extract_data().
+    
     Preprocess the image to extract ROIs for Superheavy Speed, Superheavy Altitude, Starship Speed, Starship Altitude, and Time.
 
     Args:
@@ -26,9 +40,10 @@ def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager:
     Returns:
         tuple: A tuple containing the ROIs for Superheavy Speed, Superheavy Altitude, Starship Speed, Starship Altitude, and Time.
     """
-    # Helper: single empty ROI -> return None so OCR can early-exit
-    def empty_roi():
-        return None
+    import warnings
+    warnings.warn("preprocess_image() is deprecated and will be removed in a future version. "
+                  "ROI preprocessing is now handled directly in extract_data().", 
+                  DeprecationWarning, stacklevel=2)
 
     # Input validation
     if image is None:
@@ -50,17 +65,6 @@ def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager:
         return {}
     
     try:
-        # Helper: safe slice function
-        def slice_roi(img, y, h, x, w):
-            ih, iw = img.shape[0], img.shape[1]
-            y0 = max(0, int(y))
-            x0 = max(0, int(x))
-            y1 = min(ih, int(y + h))
-            x1 = min(iw, int(x + w))
-            if y0 >= y1 or x0 >= x1:
-                return None
-            return img[y0:y1, x0:x1]
-
         # Build mapping roi_id -> cropped image for all active ROIs
         rois_map: Dict[str, Optional[np.ndarray]] = {}
         active = use_manager.get_active_rois(frame_idx)
@@ -75,15 +79,12 @@ def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager:
         # Debug logging
         if display_rois:
             logger.debug("Displaying ROI slices for visual inspection")
-            for rid, img in rois_map.items():
-                title = rid
-                try:
-                    roi_obj = next((r for r in active if r.id == rid), None)
-                    if roi_obj and roi_obj.label:
-                        title = f"{rid} ({roi_obj.label})"
-                except Exception:
-                    pass
-                display_image(img, title)
+            for roi in active:
+                title = roi.id
+                if roi.label:
+                    title = f"{roi.id} ({roi.label})"
+                roi_img = slice_roi(image, roi.y, roi.h, roi.x, roi.w)
+                display_image(roi_img, title)
 
         return rois_map
     
@@ -140,9 +141,6 @@ def extract_data(image: np.ndarray, display_rois: bool = False, debug: bool = Fa
     """
     if debug:
         logger.debug("Starting data extraction from image")
-    
-    # Preprocess the image to get ROIs mapping (roi_id -> image)
-    rois_map = preprocess_image(image, display_rois, roi_manager=roi_manager, frame_idx=frame_idx)
 
     mgr = roi_manager or get_default_manager()
     vehicles_data = {}
@@ -156,7 +154,8 @@ def extract_data(image: np.ndarray, display_rois: bool = False, debug: bool = Fa
     active_rois = mgr.get_active_rois(frame_idx)
     fuel_extracted = False
     for roi in active_rois:
-        roi_img = rois_map.get(roi.id)
+        # Slice the ROI image directly
+        roi_img = slice_roi(image, roi.y, roi.h, roi.x, roi.w)
         if roi_img is None:
             continue
 
