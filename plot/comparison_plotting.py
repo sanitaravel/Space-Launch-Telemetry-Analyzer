@@ -5,6 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from .data_processing import load_and_clean_data, compute_acceleration, compute_g_force, prepare_fuel_data_columns
+from .plot_utils import maximize_figure_window
 from utils.constants import (PLOT_MULTIPLE_LAUNCHES_PARAMS, COMPARE_FUEL_LEVEL_PARAMS,
                       FIGURE_SIZE, TITLE_FONT_SIZE, SUBTITLE_FONT_SIZE, LABEL_FONT_SIZE, 
                       LEGEND_FONT_SIZE, TICK_FONT_SIZE, MARKER_SIZE, MARKER_ALPHA, 
@@ -14,43 +15,6 @@ from utils.logger import get_logger
 
 # Initialize logger
 logger = get_logger(__name__)
-
-# Set seaborn style globally for all plots - slightly bigger font size
-sns.set_theme(style="whitegrid", context="talk",
-              palette="colorblind", font_scale=1.1)
-
-
-def maximize_figure_window():
-    """
-    Maximize the current figure window to take all available screen space without going full screen.
-    This preserves window decorations and taskbar visibility.
-    """
-    try:
-        # Get the figure manager
-        fig_manager = plt.get_current_fig_manager()
-        
-        # Try different approaches based on backend, prioritizing maximize over full screen
-        if hasattr(fig_manager, 'window') and hasattr(fig_manager.window, 'showMaximized'):
-            # Qt backend (most common)
-            fig_manager.window.showMaximized()
-        elif hasattr(fig_manager, 'window') and hasattr(fig_manager.window, 'state') and hasattr(fig_manager.window, 'tk'):
-            # TkAgg backend
-            fig_manager.window.state('zoomed')  # Windows 'zoomed' state
-        elif hasattr(fig_manager, 'frame') and hasattr(fig_manager.frame, 'Maximize'):
-            # WX backend
-            fig_manager.frame.Maximize(True)
-        elif hasattr(fig_manager, 'window') and hasattr(fig_manager.window, 'maximize'):
-            # Other backends with maximize function
-            fig_manager.window.maximize()
-        elif hasattr(fig_manager, 'full_screen_toggle'):
-            # Only use full screen as a last resort
-            logger.debug("Using full_screen_toggle as fallback")
-            fig_manager.full_screen_toggle()
-        elif hasattr(fig_manager, 'resize'):
-            # MacOSX backend
-            fig_manager.resize(*fig_manager.window.get_screen().get_size())
-    except Exception as e:
-        logger.debug(f"Could not maximize window: {str(e)}")
 
 
 def plot_multiple_launches(df_list: list, x: str, y: str, title: str, filename: str, folder: str,
@@ -186,19 +150,23 @@ def compare_multiple_launches(start_time: int, end_time: int, *json_paths: str, 
                 df = df[df['real_time_seconds'] <= end_time]
             logger.debug(f"Using {len(df)} of {original_count} data points after time filtering")
 
-            # Calculate acceleration using 30-frame distance
-            sh_speed_col = 'superheavy.speed' if 'superheavy.speed' in df.columns else 'superheavy_speed'
-            ss_speed_col = 'starship.speed' if 'starship.speed' in df.columns else 'starship_speed'
+            # Detect vehicles and calculate acceleration/G-forces for all of them
+            from .data_processing import detect_vehicles
+            vehicles = detect_vehicles(df)
             
-            df['superheavy_acceleration'] = compute_acceleration(df, sh_speed_col)
-            df['starship_acceleration'] = compute_acceleration(df, ss_speed_col)
-
-            # Calculate G-forces
-            df['superheavy_g_force'] = compute_g_force(df['superheavy_acceleration'])
-            df['starship_g_force'] = compute_g_force(df['starship_acceleration'])
+            for vehicle in vehicles:
+                speed_col = f'{vehicle}.speed' if f'{vehicle}.speed' in df.columns else f'{vehicle}_speed'
+                if speed_col in df.columns:
+                    df[f'{vehicle}_acceleration'] = compute_acceleration(df, speed_col)
+                    df[f'{vehicle}_g_force'] = compute_g_force(df[f'{vehicle}_acceleration'])
 
             # Ensure fuel data columns exist and have proper names
             df = prepare_fuel_data_columns(df)
+            
+            df_list.append(df)
+            launch_id = extract_launch_number(json_path)
+            labels.append(f'Launch {launch_id}')  # Capitalize 'launch'
+            logger.info(f"Successfully processed launch {launch_id}")
             
             df_list.append(df)
             launch_id = extract_launch_number(json_path)
