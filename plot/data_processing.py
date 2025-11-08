@@ -23,23 +23,30 @@ def detect_vehicles(df: pd.DataFrame) -> list:
     Returns:
         list: List of detected vehicle names
     """
-    vehicles = []
+    vehicles = set()
     
-    # Look for columns with vehicle prefixes (e.g., 'superheavy.speed', 'starship.speed', etc.)
-    vehicle_columns = [col for col in df.columns if '.' in col and col.split('.')[0] not in ['fuel']]
+    # Look for columns that represent vehicle data
+    for col in df.columns:
+        if '.' in col:
+            parts = col.split('.')
+            prefix = parts[0]
+            
+            # Check if this looks like vehicle data (has speed, altitude, fuel, or engines)
+            if len(parts) >= 2 and parts[1] in ['speed', 'altitude', 'fuel', 'engines']:
+                vehicles.add(prefix)
+            # Also check for nested fuel/engine data
+            elif len(parts) >= 3 and (parts[1] in ['fuel', 'engines'] or (parts[1] == 'fuel' and parts[2] in ['lox', 'ch4'])):
+                vehicles.add(prefix)
     
-    if vehicle_columns:
-        # Extract unique vehicle names from column prefixes
-        vehicle_names = set(col.split('.')[0] for col in vehicle_columns)
-        vehicles = sorted(list(vehicle_names))
+    # Convert to sorted list
+    vehicle_list = sorted(list(vehicles))
     
-    # Fallback: look for direct vehicle columns (legacy format)
-    if not vehicles:
-        potential_vehicles = ['superheavy', 'starship', 'new_glenn', 'second_stage']
-        vehicles = [v for v in potential_vehicles if v in df.columns]
+    # Filter out non-vehicle prefixes that might have slipped through
+    non_vehicle_prefixes = {'real_time', 'time', 'frame_number', 'fuel'}
+    vehicle_list = [v for v in vehicle_list if v not in non_vehicle_prefixes]
     
-    logger.info(f"Detected vehicles: {vehicles}")
-    return vehicles
+    logger.info(f"Detected vehicles: {vehicle_list}")
+    return vehicle_list
 
 
 def load_and_clean_data(json_path: str) -> pd.DataFrame:

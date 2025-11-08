@@ -5,6 +5,21 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+def beautify_vehicle_name(vehicle_name: str) -> str:
+    """
+    Beautify vehicle names for display on graphs.
+    
+    Replaces underscores with spaces and applies title case.
+    
+    Args:
+        vehicle_name (str): The raw vehicle name (e.g., "superheavy", "new_gleen")
+        
+    Returns:
+        str: The beautified vehicle name (e.g., "Superheavy", "New Gleenn")
+    """
+    return vehicle_name.replace('_', ' ').title()
+
+
 def maximize_figure_window():
     """
     Maximize the current figure window to take all available screen space without going full screen.

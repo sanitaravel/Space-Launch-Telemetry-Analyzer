@@ -109,10 +109,48 @@ def extract_launch_number(json_path: str) -> str:
     """
     return os.path.basename(os.path.dirname(json_path)).split('_')[-1]
 
+
+def extract_launch_info(json_path: str) -> dict:
+    """
+    Extract company, rocket, and launch number from a JSON file path.
+    
+    Args:
+        json_path (str): Path to the JSON file
+        
+    Returns:
+        dict: Dictionary with 'company', 'rocket', and 'launch_number' keys
+    """
+    # Normalize path separators
+    path = os.path.normpath(json_path)
+    parts = path.split(os.sep)
+    
+    # Find the results directory and extract subsequent parts
+    try:
+        results_idx = parts.index('results')
+        company = parts[results_idx + 1]
+        rocket = parts[results_idx + 2]
+        launch_dir = parts[results_idx + 3]
+        launch_number = launch_dir.split('_')[-1]
+        
+        return {
+            'company': company,
+            'rocket': rocket,
+            'launch_number': launch_number
+        }
+    except (IndexError, ValueError):
+        # Fallback to old method if path structure doesn't match
+        launch_number = os.path.basename(os.path.dirname(json_path)).split('_')[-1]
+        return {
+            'company': 'unknown',
+            'rocket': 'unknown',
+            'launch_number': launch_number
+        }
+
 __all__ = [
     # Functions defined in this file
     'display_image',
     'extract_launch_number',
+    'extract_launch_info',
     
     # Logger functions
     'get_logger',

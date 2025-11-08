@@ -239,6 +239,47 @@ def validate_selected_launches(selected_launches):
         return False
     return True
 
+def detect_available_vehicles(json_paths):
+    """Detect all available vehicles across the selected JSON files."""
+    from plot.data_processing import load_and_clean_data, detect_vehicles
+    
+    available_vehicles = set()
+    
+    for json_path in json_paths:
+        try:
+            df = load_and_clean_data(json_path)
+            if not df.empty:
+                vehicles = detect_vehicles(df)
+                available_vehicles.update(vehicles)
+        except Exception as e:
+            logger.warning(f"Error detecting vehicles in {json_path}: {e}")
+    
+    # Return sorted list of vehicle names
+    return sorted(list(available_vehicles))
+
+def prompt_for_vehicle_selection(available_vehicles):
+    """Prompt user to select which vehicles to include in the comparison."""
+    if not available_vehicles:
+        return []
+    
+    # Format vehicle names for display
+    vehicle_choices = []
+    for vehicle in available_vehicles:
+        display_name = vehicle.replace('_', ' ').title()
+        vehicle_choices.append((f"{display_name} ({vehicle})", vehicle))
+    
+    questions = [
+        inquirer.Checkbox(
+            'vehicles',
+            message="Select vehicles to include in the comparison (press space to select)",
+            choices=vehicle_choices,
+            default=available_vehicles  # Select all by default
+        )
+    ]
+    
+    answers = inquirer.prompt(questions)
+    return answers['vehicles'] if answers else []
+
 def execute_launch_comparison(launches, start_time_input, end_time_input, show_figures, launch_folders):
     """Execute the launch comparison with the provided parameters."""
     # Map selected display names back to json paths
@@ -255,10 +296,25 @@ def execute_launch_comparison(launches, start_time_input, end_time_input, show_f
         print("Error: Could not resolve paths for selected launches.")
         return
     
+    # Detect available vehicles in selected launches
+    available_vehicles = detect_available_vehicles(selected_paths)
+    
+    if not available_vehicles:
+        print("Error: Could not detect any vehicles in the selected launches.")
+        return
+    
+    # Let user select which vehicles to plot
+    selected_vehicles = prompt_for_vehicle_selection(available_vehicles)
+    
+    if not selected_vehicles:
+        print("No vehicles selected. Comparison cancelled.")
+        return
+    
     start_time = int(start_time_input) if start_time_input else 0
     end_time = int(end_time_input) if end_time_input else -1
     
     logger.debug(f"Comparing launches: {', '.join(launches)}")
+    logger.debug(f"Selected vehicles: {', '.join(selected_vehicles)}")
     logger.debug(f"Time window: {start_time} to {end_time}")
     
-    compare_multiple_launches(start_time, end_time, *selected_paths, show_figures=show_figures)
+    compare_multiple_launches(start_time, end_time, *selected_paths, show_figures=show_figures, selected_vehicles=selected_vehicles)

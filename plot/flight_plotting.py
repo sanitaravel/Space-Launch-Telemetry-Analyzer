@@ -5,7 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from .data_processing import load_and_clean_data, compute_acceleration, compute_g_force, prepare_fuel_data_columns
-from .plot_utils import maximize_figure_window
+from .plot_utils import maximize_figure_window, beautify_vehicle_name
 from .engine_plotting import create_engine_timeline_plot, create_engine_performance_correlation
 from .fuel_plotting import create_fuel_level_plot
 from utils.constants import (ANALYZE_RESULTS_PLOT_PARAMS, FUEL_LEVEL_PLOT_PARAMS, 
@@ -165,7 +165,7 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
             params = (
                 'real_time_seconds',
                 [lox_col, ch4_col],
-                f'{vehicle.title()} Fuel Levels',
+                f'{beautify_vehicle_name(vehicle)} Fuel Levels',
                 f'{vehicle}_fuel_levels.png',
                 ['LOX', 'CH4'],
                 'Mission Time (seconds)',
@@ -198,9 +198,9 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
         if speed_col in df.columns:
             params = (
                 'real_time_seconds', speed_col,
-                f'{vehicle.title()} Velocity',
+                f'{beautify_vehicle_name(vehicle)} Velocity',
                 f'{vehicle}_velocity.png',
-                vehicle.title(), 'Mission Time (seconds)', 'Velocity (km/h)',
+                beautify_vehicle_name(vehicle), 'Mission Time (seconds)', 'Velocity (km/h)',
                 folder, launch_number, show_figures
             )
             create_scatter_plot(df, *params)
@@ -211,9 +211,9 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
         if alt_col in df.columns:
             params = (
                 'real_time_seconds', alt_col,
-                f'{vehicle.title()} Altitude',
+                f'{beautify_vehicle_name(vehicle)} Altitude',
                 f'{vehicle}_altitude.png',
-                vehicle.title(), 'Mission Time (seconds)', 'Altitude (km)',
+                beautify_vehicle_name(vehicle), 'Mission Time (seconds)', 'Altitude (km)',
                 folder, launch_number, show_figures
             )
             create_scatter_plot(df, *params)
@@ -224,9 +224,9 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
         if accel_col in df.columns:
             params = (
                 'real_time_seconds', accel_col,
-                f'{vehicle.title()} Acceleration',
+                f'{beautify_vehicle_name(vehicle)} Acceleration',
                 f'{vehicle}_acceleration.png',
-                vehicle.title(), 'Mission Time (seconds)', 'Acceleration (m/s²)',
+                beautify_vehicle_name(vehicle), 'Mission Time (seconds)', 'Acceleration (m/s²)',
                 folder, launch_number, show_figures
             )
             create_scatter_plot(df, *params)
@@ -237,9 +237,9 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
         if gforce_col in df.columns:
             params = (
                 'real_time_seconds', gforce_col,
-                f'{vehicle.title()} G-Force',
+                f'{beautify_vehicle_name(vehicle)} G-Force',
                 f'{vehicle}_g_force.png',
-                vehicle.title(), 'Mission Time (seconds)', 'G-Force (g)',
+                beautify_vehicle_name(vehicle), 'Mission Time (seconds)', 'G-Force (g)',
                 folder, launch_number, show_figures
             )
             create_scatter_plot(df, *params)

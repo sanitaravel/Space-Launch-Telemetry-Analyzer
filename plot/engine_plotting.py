@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from .plot_utils import maximize_figure_window
+from .plot_utils import maximize_figure_window, beautify_vehicle_name
 from utils.constants import (ENGINE_TIMELINE_PARAMS, ENGINE_PERFORMANCE_PARAMS,
                       FIGURE_SIZE, TITLE_FONT_SIZE, SUBTITLE_FONT_SIZE, LABEL_FONT_SIZE, 
                       LEGEND_FONT_SIZE, TICK_FONT_SIZE, MARKER_SIZE, MARKER_ALPHA, 
@@ -31,7 +31,7 @@ def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch
         logger.debug(f"No engine activity columns found for {vehicle}")
         return
     
-    title = f"Launch {launch_number} - {vehicle.title()} Engine Activity"
+    title = f"Launch {launch_number} - {beautify_vehicle_name(vehicle)} Engine Activity"
     logger.info(f"Creating engine plot: {title}")
 
     # Create figure (fullscreen)
@@ -143,7 +143,7 @@ def create_engine_performance_correlation(df: pd.DataFrame, vehicle: str, folder
     else:
         color_col = engine_cols[0]
     
-    title_with_launch = f"Launch {launch_number} - {vehicle.title()} Velocity vs Engine Activity"
+    title_with_launch = f"Launch {launch_number} - {beautify_vehicle_name(vehicle)} Velocity vs Engine Activity"
     logger.info(f"Creating engine performance correlation plot: {title_with_launch}")
 
     # Create figure (fullscreen)
