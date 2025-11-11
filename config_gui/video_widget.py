@@ -27,6 +27,7 @@ class VideoWidget(QOpenGLWidget):
         self.offset_y = 0
         self.is_selecting = False
         self.start_pos = None
+        self.vehicle_colors = {}  # Will be populated dynamically
 
     def set_frame(self, frame: np.ndarray):
         self.frame = frame
@@ -34,6 +35,7 @@ class VideoWidget(QOpenGLWidget):
 
     def set_rois(self, rois):
         self.rois = rois
+        self.update_vehicle_colors()
 
     def is_active(self, roi, frame_idx: int) -> bool:
         start = roi.get("start_time")
@@ -57,6 +59,73 @@ class VideoWidget(QOpenGLWidget):
         if e is None:
             return frame_idx >= s
         return s <= frame_idx <= e
+
+    def update_vehicle_colors(self):
+        """Update vehicle color mapping based on current ROIs."""
+        vehicles = set()
+        for roi in self.rois:
+            vehicle = roi.get("vehicle")
+            if vehicle:
+                vehicles.add(vehicle)
+
+        # Sort vehicles for consistent color assignment
+        vehicles = sorted(vehicles)
+
+        # Generate distinct colors for each vehicle
+        self.vehicle_colors = {}
+        num_vehicles = len(vehicles)
+
+        if num_vehicles == 0:
+            return
+
+        for i, vehicle in enumerate(vehicles):
+            # Use HSV color space to generate distinct colors
+            hue = (i * 360) // num_vehicles  # Evenly distribute hues
+            saturation = 255  # Maximum saturation for vibrant colors
+            value = 255  # Full brightness
+
+            # Convert HSV to RGB (fixed conversion)
+            h = hue / 60.0
+            c = saturation / 255.0
+            x = c * (1 - abs(h % 2 - 1))
+            m = (value / 255.0) - c
+
+            if 0 <= h < 1:
+                r, g, b = c, x, 0
+            elif 1 <= h < 2:
+                r, g, b = x, c, 0
+            elif 2 <= h < 3:
+                r, g, b = 0, c, x
+            elif 3 <= h < 4:
+                r, g, b = 0, x, c
+            elif 4 <= h < 5:
+                r, g, b = x, 0, c
+            else:
+                r, g, b = c, 0, x
+
+            self.vehicle_colors[vehicle] = (
+                int((r + m) * 255),
+                int((g + m) * 255),
+                int((b + m) * 255)
+            )
+
+    def get_roi_color(self, roi):
+        """Get color for ROI based on vehicle and type."""
+        vehicle = roi.get("vehicle", "")
+        roi_type = roi.get("id", "")
+
+        # Get base color for vehicle (or default if not found)
+        base_color = self.vehicle_colors.get(vehicle, (128, 128, 128))  # Gray default
+
+        # Variations for different ROI types
+        type_variations = {
+            "engines": base_color,
+            "speed": tuple(min(255, c + 50) for c in base_color),  # Lighter
+            "altitude": tuple(max(0, c - 50) for c in base_color),  # Darker
+            "time": (base_color[1], base_color[2], base_color[0]),  # Rotated colors
+        }
+
+        return type_variations.get(roi_type, base_color)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -95,7 +164,7 @@ class VideoWidget(QOpenGLWidget):
             for roi in self.rois:
                 if self.is_active(roi, self.frame_idx):
                     role = roi.get("id") or "default"
-                    color = (0, 255, 0)  # green for ROIs
+                    color = self.get_roi_color(roi)
                     qcolor = QColor(*color)
                     measurement_unit = roi.get("measurement_unit", "")
                     vehicle = roi.get("vehicle")
