@@ -26,11 +26,11 @@ def create_new_config_cli():
     # Step 3: Get launch number
     launch_number = get_launch_number()
 
-    # Step 4: Get webcast URL
-    webcast_url = get_webcast_url()
+    # Step 4: Get video source
+    video_type, webcast_url = get_video_source()
 
     # Step 5: Create basic config structure
-    config_data = create_basic_config_structure(provider, rocket, launch_number, webcast_url)
+    config_data = create_basic_config_structure(provider, rocket, launch_number, video_type, webcast_url)
 
     # Step 6: Save config file
     config_path = save_config_file(provider, rocket, launch_number, config_data)
@@ -41,7 +41,7 @@ def create_new_config_cli():
     # Step 7: Offer to download the video
     should_download = offer_to_download_video()
     if should_download:
-        download_success = download_video(webcast_url, launch_number, provider, rocket)
+        download_success = download_video(webcast_url, launch_number, provider, rocket, video_type)
         if download_success:
             print(f"📹 Video downloaded successfully!")
         else:
@@ -134,25 +134,50 @@ def get_launch_number():
     answers = inquirer.prompt(questions)
     return int(answers['launch_number'])
 
-def get_webcast_url():
-    """Prompt user for webcast URL."""
-    questions = [
+def get_video_source():
+    """Prompt user for video source type and URL."""
+    # First, select the source type
+    source_questions = [
+        inquirer.List(
+            'source_type',
+            message="Select video source type:",
+            choices=['YouTube', 'Twitter/X'],
+        ),
+    ]
+
+    source_answers = inquirer.prompt(source_questions)
+    source_type = source_answers['source_type']
+
+    # Then, prompt for the URL based on the type
+    if source_type == 'YouTube':
+        url_message = "Enter YouTube video URL:"
+        url_example = "https://www.youtube.com/watch?v=..."
+    else:  # Twitter/X
+        url_message = "Enter Twitter/X broadcast URL:"
+        url_example = "https://x.com/i/broadcasts/..."
+
+    url_questions = [
         inquirer.Text(
             'url',
-            message="Enter webcast URL (e.g., https://x.com/i/broadcasts/...):",
+            message=url_message,
             validate=validate_url,
         ),
     ]
 
-    answers = inquirer.prompt(questions)
-    return answers['url'].strip()
+    url_answers = inquirer.prompt(url_questions)
+    url = url_answers['url'].strip()
 
-def create_basic_config_structure(provider, rocket, launch_number, webcast_url):
+    # Map to internal type
+    internal_type = "youtube" if source_type == 'YouTube' else "twitter/x"
+
+    return internal_type, url
+
+def create_basic_config_structure(provider, rocket, launch_number, video_type, webcast_url):
     """Create basic config structure with metadata."""
     config_data = {
-        "version": 6,
+        "version": 1,
         "video_source": {
-            "type": "twitter/x",
+            "type": video_type,
             "url": webcast_url
         },
         "time_unit": "frames",
@@ -192,17 +217,17 @@ def offer_to_download_video():
     answers = inquirer.prompt(questions)
     return answers['download']
 
-def download_video(url, launch_number, provider, rocket):
+def download_video(url, launch_number, provider, rocket, video_type):
     """Download the video using the appropriate downloader."""
     flight_identifier = f"flight_{launch_number}"
 
-    # Determine platform from URL
-    if 'youtube.com' in url or 'youtu.be' in url:
+    # Determine platform from type
+    if video_type == "youtube":
         print(f"Downloading YouTube video...")
         return download_youtube_video(url, flight_identifier, provider, rocket)
-    elif 'x.com' in url or 'twitter.com' in url:
+    elif video_type == "twitter/x":
         print(f"Downloading Twitter/X broadcast...")
         return download_twitter_broadcast(url, flight_identifier, provider, rocket)
     else:
-        print(f"Unsupported URL format: {url}")
+        print(f"Unsupported video type: {video_type}")
         return False

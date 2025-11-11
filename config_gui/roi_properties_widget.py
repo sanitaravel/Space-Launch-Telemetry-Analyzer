@@ -320,6 +320,14 @@ class ROIPropertiesWidget(QWidget):
         else:
             self.engine_group_selected.emit("")  # No group selected
 
+    def load_points_for_group(self, group_name):
+        """Load points for the selected engine group into the points list."""
+        self.points_list.clear()
+        if self.current_roi and hasattr(self.current_roi, 'points') and group_name in self.current_roi.points:
+            for point in self.current_roi.points[group_name]:
+                if len(point) == 2:
+                    self.points_list.addItem(f"{point[0]},{point[1]}")
+
     def add_engine_group(self):
         """Add a new engine group."""
         if not self.current_roi:
