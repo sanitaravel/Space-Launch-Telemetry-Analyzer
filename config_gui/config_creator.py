@@ -47,12 +47,7 @@ def create_new_config_cli():
         else:
             print(f"❌ Failed to download video. You can try downloading it later from the Download Media menu.")
 
-    print(f"\n📝 Next steps:")
-    print(f"   1. Edit the config file to add ROI definitions")
-    print(f"   2. Test the configuration with video processing")
-
-    input("\nPress Enter to continue...")
-    clear_screen()
+    return config_path
 
 def select_or_create_provider():
     """Prompt user to select existing provider or create new one."""
