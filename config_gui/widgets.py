@@ -182,9 +182,11 @@ class ROIPropertiesWidget(QWidget):
         self.id_edit = QLineEdit()
         self.label_edit = QLineEdit()
         self.vehicle_combo = QComboBox()
+        self.vehicle_combo.setEditable(True)
         self.vehicle_combo.addItems([
             '', 'superheavy', 'starship'
         ])
+        self.vehicle_combo.lineEdit().editingFinished.connect(self.on_vehicle_changed)
         self.measurement_unit_edit = QLineEdit()
 
         basic_layout.addRow("ID:", self.id_edit)
@@ -232,109 +234,11 @@ class ROIPropertiesWidget(QWidget):
         self.apply_btn.clicked.connect(self.apply_changes)
         self.reset_btn.clicked.connect(self.reset_changes)
 
-    def set_roi(self, roi: ROIData):
-        """Set current ROI for editing."""
-        self.current_roi = roi
-        self.id_edit.setText(roi.id)
-        self.label_edit.setText(roi.label)
-        vehicle = roi.vehicle if roi.vehicle else ''
-        self.vehicle_combo.setCurrentText(vehicle)
-        self.measurement_unit_edit.setText(roi.measurement_unit)
-        self.rect_radio.setChecked(roi.is_rectangle())
-        self.x_spin.setValue(roi.x)
-        self.y_spin.setValue(roi.y)
-        self.w_spin.setValue(roi.w)
-        self.h_spin.setValue(roi.h)
-
-    def apply_changes(self):
-        """Apply changes to current ROI."""
-        if not self.current_roi:
-            return
-
-        self.current_roi.id = self.id_edit.text()
-        self.current_roi.label = self.label_edit.text()
-        vehicle_text = self.vehicle_combo.currentText()
-        self.current_roi.vehicle = vehicle_text if vehicle_text else None
-        self.current_roi.measurement_unit = self.measurement_unit_edit.text()
-        self.x_spin.setValue(self.current_roi.x)
-        self.y_spin.setValue(self.current_roi.y)
-        self.w_spin.setValue(self.current_roi.w)
-        self.h_spin.setValue(self.current_roi.h)
-
-        self.properties_changed.emit(self.current_roi)
-
-    def reset_changes(self):
-        """Reset changes."""
-        if self.current_roi:
-            self.set_roi(self.current_roi)
-    """Widget for editing ROI properties."""
-    properties_changed = pyqtSignal(ROIData)
-
-    def __init__(self):
-        super().__init__()
-        self.current_roi = None
-        self.setup_ui()
-
-    def setup_ui(self):
-        """Setup the properties UI."""
-        layout = QVBoxLayout()
-
-        # Basic properties
-        basic_group = QGroupBox("Basic Properties")
-        basic_layout = QFormLayout()
-
-        self.id_edit = QLineEdit()
-        self.label_edit = QLineEdit()
-        self.vehicle_combo = QComboBox()
-        self.vehicle_combo.addItems([
-            '', 'superheavy', 'starship'
-        ])
-        self.measurement_unit_edit = QLineEdit()
-
-        basic_layout.addRow("ID:", self.id_edit)
-        basic_layout.addRow("Label:", self.label_edit)
-        basic_layout.addRow("Vehicle:", self.vehicle_combo)
-        basic_layout.addRow("Measurement Unit:", self.measurement_unit_edit)
-        basic_group.setLayout(basic_layout)
-
-        # Geometry properties
-        geom_group = QGroupBox("Geometry")
-        geom_layout = QVBoxLayout()
-
-        self.rect_radio = QCheckBox("Rectangle")
-        self.rect_radio.setChecked(True)
-
-        coords_layout = QFormLayout()
-        self.x_spin = QSpinBox(); self.x_spin.setRange(0, 9999)
-        self.y_spin = QSpinBox(); self.y_spin.setRange(0, 9999)
-        self.w_spin = QSpinBox(); self.w_spin.setRange(0, 9999)
-        self.h_spin = QSpinBox(); self.h_spin.setRange(0, 9999)
-
-        coords_layout.addRow("X:", self.x_spin)
-        coords_layout.addRow("Y:", self.y_spin)
-        coords_layout.addRow("Width:", self.w_spin)
-        coords_layout.addRow("Height:", self.h_spin)
-
-        geom_layout.addWidget(self.rect_radio)
-        geom_layout.addLayout(coords_layout)
-        geom_group.setLayout(geom_layout)
-
-        # Buttons
-        button_layout = QHBoxLayout()
-        self.apply_btn = QPushButton("Apply")
-        self.reset_btn = QPushButton("Reset")
-        button_layout.addWidget(self.apply_btn)
-        button_layout.addWidget(self.reset_btn)
-
-        layout.addWidget(basic_group)
-        layout.addWidget(geom_group)
-        layout.addLayout(button_layout)
-
-        self.setLayout(layout)
-
-        # Connect signals
-        self.apply_btn.clicked.connect(self.apply_changes)
-        self.reset_btn.clicked.connect(self.reset_changes)
+    def on_vehicle_changed(self):
+        """Handle vehicle combo editing finished to add new vehicles."""
+        text = self.vehicle_combo.currentText()
+        if text and text not in [self.vehicle_combo.itemText(i) for i in range(self.vehicle_combo.count())]:
+            self.vehicle_combo.addItem(text)
 
     def set_roi(self, roi: ROIData):
         """Set current ROI for editing."""
