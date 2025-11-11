@@ -14,6 +14,7 @@ from .models import ROIData
 class ROIPropertiesWidget(QWidget):
     """Widget for editing ROI properties."""
     properties_changed = pyqtSignal(ROIData)
+    engine_group_selected = pyqtSignal(str)  # Signal when engine group is selected
 
     def __init__(self):
         super().__init__()
@@ -164,6 +165,8 @@ class ROIPropertiesWidget(QWidget):
             if hasattr(roi, 'points') and roi.points:
                 for group_name in roi.points.keys():
                     self.groups_list.addItem(group_name)
+            # Emit empty group selection initially
+            self.engine_group_selected.emit("")
         else:
             self.engines_widget.hide()
             self.rect_widget.show()
@@ -172,6 +175,8 @@ class ROIPropertiesWidget(QWidget):
             self.y_spin.setValue(roi.y)
             self.w_spin.setValue(roi.w)
             self.h_spin.setValue(roi.h)
+            # Emit empty group selection for non-engine ROIs
+            self.engine_group_selected.emit("")
 
     def apply_changes(self):
         """Apply changes to current ROI."""
@@ -220,9 +225,14 @@ class ROIPropertiesWidget(QWidget):
         if current_item:
             group_name = current_item.text()
             self.load_points_for_group(group_name)
+            self.engine_group_selected.emit(group_name)
+        else:
+            self.engine_group_selected.emit("")  # No group selected
 
     def add_engine_group(self):
         """Add a new engine group."""
+        if not self.current_roi:
+            return
         from PyQt6.QtWidgets import QInputDialog
         group_name, ok = QInputDialog.getText(self, "Add Engine Group", "Group name:")
         if ok and group_name:
@@ -235,6 +245,8 @@ class ROIPropertiesWidget(QWidget):
 
     def remove_engine_group(self):
         """Remove the selected engine group."""
+        if not self.current_roi:
+            return
         current_item = self.groups_list.currentItem()
         if current_item:
             group_name = current_item.text()
@@ -245,6 +257,8 @@ class ROIPropertiesWidget(QWidget):
 
     def add_point(self):
         """Add a point to the selected engine group."""
+        if not self.current_roi:
+            return
         current_group = self.groups_list.currentItem()
         if current_group:
             from PyQt6.QtWidgets import QInputDialog
@@ -264,6 +278,8 @@ class ROIPropertiesWidget(QWidget):
 
     def remove_point(self):
         """Remove the selected point from the current group."""
+        if not self.current_roi:
+            return
         current_group = self.groups_list.currentItem()
         current_point = self.points_list.currentItem()
         if current_group and current_point:
@@ -277,6 +293,6 @@ class ROIPropertiesWidget(QWidget):
     def load_points_for_group(self, group_name):
         """Load points for the selected engine group."""
         self.points_list.clear()
-        if hasattr(self.current_roi, 'points') and group_name in self.current_roi.points:
+        if self.current_roi and hasattr(self.current_roi, 'points') and group_name in self.current_roi.points:
             for point in self.current_roi.points[group_name]:
                 self.points_list.addItem(f"({point[0]}, {point[1]})")

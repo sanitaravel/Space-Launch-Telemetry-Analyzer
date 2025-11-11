@@ -152,6 +152,9 @@ class ROIConfigurator(QMainWindow):
         self.edit_btn.clicked.connect(self.edit_roi)
         self.delete_btn.clicked.connect(self.delete_roi)
         self.video_widget.roi_selected.connect(self.on_new_roi_selected)
+        self.properties_widget.properties_changed.connect(self.on_properties_changed)
+        self.properties_widget.engine_group_selected.connect(self.video_widget.set_current_engine_group)
+        self.video_widget.point_added.connect(self.on_point_added)
 
         self.update_roi_list()
 
@@ -251,6 +254,7 @@ class ROIConfigurator(QMainWindow):
         roi = item.data(Qt.ItemDataRole.UserRole)
         self.properties_widget.set_roi(roi)
         self.current_roi = roi
+        self.video_widget.set_current_roi(roi.__dict__)
 
     def on_new_roi_selected(self, roi):
         """Handle new ROI created by selection."""
@@ -264,6 +268,7 @@ class ROIConfigurator(QMainWindow):
         self.update_roi_list()
         self.properties_widget.set_roi(roi)
         self.current_roi = roi
+        self.video_widget.set_current_roi(roi.__dict__)
 
         # Select the new item
         for i in range(self.roi_list.count()):
@@ -275,6 +280,14 @@ class ROIConfigurator(QMainWindow):
     def on_properties_changed(self, roi):
         """Handle ROI properties changes."""
         self.update_roi_list()
+        self.video_widget.set_rois([r.__dict__ for r in self.config.rois])
+
+    def on_point_added(self):
+        """Handle point added to engine group."""
+        # Update the properties widget to refresh the points list
+        if self.current_roi:
+            self.properties_widget.set_roi(self.current_roi)
+        # Update video display
         self.video_widget.set_rois([r.__dict__ for r in self.config.rois])
 
     def add_roi(self):
