@@ -7,14 +7,17 @@ from typing import Optional
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
     QListWidget, QListWidgetItem, QGroupBox, QPushButton,
-    QMessageBox, QFileDialog
+    QMessageBox, QFileDialog, QSlider, QLabel, QComboBox
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QAction
 
 from .models import ROIConfig, ROIData
-from .widgets import ImageViewer, ROIPropertiesWidget
+from .widgets import VideoWidget, ROIPropertiesWidget
 from utils.logger import get_logger
+import cv2
+import os
+from pathlib import Path
 
 logger = get_logger(__name__)
 
@@ -43,11 +46,52 @@ class ROIConfigurator(QMainWindow):
         self.setCentralWidget(central_widget)
 
         # Main layout
-        main_layout = QHBoxLayout()
+        main_layout = QVBoxLayout()
 
-        # Left panel - Image viewer
-        self.image_viewer = ImageViewer()
-        main_layout.addWidget(self.image_viewer, 3)
+        # Video area with controls
+        video_layout = QVBoxLayout()
+
+        # Video widget
+        self.video_widget = VideoWidget()
+        video_layout.addWidget(self.video_widget, 1)
+
+        # Timeline slider
+        self.slider = QSlider(Qt.Orientation.Horizontal)
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(0)
+        self.slider.valueChanged.connect(self.seek_to_frame)
+        video_layout.addWidget(self.slider)
+
+        # Time and frame labels
+        time_frame_layout = QHBoxLayout()
+        self.time_label = QLabel("Time: 00:00:00")
+        self.frame_label = QLabel("Frame: 0")
+        time_frame_layout.addWidget(self.time_label)
+        time_frame_layout.addStretch()
+        time_frame_layout.addWidget(self.frame_label)
+        video_layout.addLayout(time_frame_layout)
+
+        # Control buttons
+        controls_layout = QHBoxLayout()
+        self.play_btn = QPushButton("Play")
+        self.play_btn.clicked.connect(self.play_pause)
+        controls_layout.addWidget(self.play_btn)
+
+        self.step_back_btn = QPushButton("<<")
+        self.step_back_btn.clicked.connect(self.step_back)
+        controls_layout.addWidget(self.step_back_btn)
+
+        self.step_forward_btn = QPushButton(">>")
+        self.step_forward_btn.clicked.connect(self.step_forward)
+        controls_layout.addWidget(self.step_forward_btn)
+
+        self.speed_combo = QComboBox()
+        self.speed_combo.addItems(["0.25x", "0.5x", "1x", "2x", "4x"])
+        self.speed_combo.setCurrentText("1x")
+        self.speed_combo.currentTextChanged.connect(self.change_speed)
+        controls_layout.addWidget(self.speed_combo)
+
+        video_layout.addLayout(controls_layout)
 
         # Right panel - ROI management
         right_panel = QWidget()
@@ -80,7 +124,12 @@ class ROIConfigurator(QMainWindow):
         right_layout.addWidget(self.properties_widget, 1)
         right_panel.setLayout(right_layout)
 
-        main_layout.addWidget(right_panel, 1)
+        # Main layout: video on left, controls in middle, right panel on right
+        content_layout = QHBoxLayout()
+        content_layout.addLayout(video_layout, 2)
+        content_layout.addWidget(right_panel, 1)
+
+        main_layout.addLayout(content_layout)
 
         central_widget.setLayout(main_layout)
 
@@ -88,11 +137,21 @@ class ROIConfigurator(QMainWindow):
         self.status_bar = self.statusBar()
         self.status_bar.showMessage("Ready")
 
+        # Video playback
+        self.cap = None
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.next_frame)
+        self.playing = False
+        self.frame_idx = 0
+        self.total_frames = 0
+        self.fps = 30.0
+        self.speed = 1.0
+
         # Connect signals
         self.add_btn.clicked.connect(self.add_roi)
         self.edit_btn.clicked.connect(self.edit_roi)
         self.delete_btn.clicked.connect(self.delete_roi)
-        self.image_viewer.roi_selected.connect(self.on_new_roi_selected)
+        self.video_widget.roi_selected.connect(self.on_new_roi_selected)
 
         self.update_roi_list()
 
@@ -123,17 +182,59 @@ class ROIConfigurator(QMainWindow):
         self.setWindowTitle(title)
 
     def load_image_from_config(self):
-        """Try to load an image from the config's video source."""
-        # For now, use test image
-        test_image = "test_frame.jpg"
-        if os.path.exists(test_image):
-            self.image_viewer.load_image(test_image)
-            self.image_viewer.clear_rois()
-            for roi in self.config.rois:
-                self.image_viewer.add_roi(roi)
-            self.status_bar.showMessage("Loaded test frame", 3000)
+        """Try to load video from the config's video source."""
+        if not self.config.config_path:
+            self.status_bar.showMessage("No config loaded", 3000)
+            return
+
+        # Parse config path to find video
+        config_path = Path(self.config.config_path)
+        # config path like configs/provider/rocket/flight_number_rois.json
+        parts = config_path.parts
+        if len(parts) >= 4 and parts[0] == 'configs':
+            provider = parts[1]
+            rocket = parts[2]
+            filename = parts[3]
+            # Extract flight_identifier from filename, e.g., flight_123_rois.json -> flight_123
+            flight_identifier = filename.replace('_rois.json', '')
+
+            video_dir = Path('flight_recordings') / provider / rocket
+            if video_dir.exists():
+                # Look for video file
+                for ext in ['mp4', 'avi', 'mkv', 'webm']:
+                    video_file = video_dir / f"{flight_identifier}.{ext}"
+                    if video_file.exists():
+                        self.load_video(str(video_file))
+                        return
+
+        self.status_bar.showMessage("No video found for config", 3000)
+
+    def load_video(self, video_path):
+        """Load video for playback."""
+        self.cap = cv2.VideoCapture(video_path)
+        if self.cap.isOpened():
+            self.fps = self.cap.get(cv2.CAP_PROP_FPS) or 30.0
+            self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.frame_idx = 0
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            ret, frame = self.cap.read()
+            if ret:
+                self.video_widget.set_frame(frame)
+                self.video_widget.frame_idx = 0
+                self.video_widget.fps = self.fps
+                self.video_widget.set_rois([roi.__dict__ for roi in self.config.rois])
+                # Set slider
+                if self.total_frames > 0:
+                    self.slider.setMaximum(self.total_frames - 1)
+                else:
+                    self.slider.setMaximum(0)
+                self.slider.setValue(0)
+                self.update_time_label()
+                self.status_bar.showMessage(f"Loaded video: {os.path.basename(video_path)}", 3000)
+            else:
+                self.status_bar.showMessage("Failed to read first frame", 3000)
         else:
-            self.status_bar.showMessage("No test frame available", 3000)
+            self.status_bar.showMessage("Failed to open video", 3000)
 
     def update_roi_list(self):
         """Update the ROI list widget."""
@@ -174,9 +275,7 @@ class ROIConfigurator(QMainWindow):
     def on_properties_changed(self, roi):
         """Handle ROI properties changes."""
         self.update_roi_list()
-        self.image_viewer.clear_rois()
-        for r in self.config.rois:
-            self.image_viewer.add_roi(r)
+        self.video_widget.set_rois([r.__dict__ for r in self.config.rois])
 
     def add_roi(self):
         """Add new ROI."""
@@ -201,9 +300,7 @@ class ROIConfigurator(QMainWindow):
             roi = current_item.data(Qt.ItemDataRole.UserRole)
             self.config.rois.remove(roi)
             self.update_roi_list()
-            self.image_viewer.clear_rois()
-            for r in self.config.rois:
-                self.image_viewer.add_roi(r)
+            self.video_widget.set_rois([r.__dict__ for r in self.config.rois])
 
     def open_config(self):
         """Open config file."""
@@ -215,6 +312,87 @@ class ROIConfigurator(QMainWindow):
             self.update_title()
             self.update_roi_list()
             self.load_image_from_config()
+
+    def update_time_label(self):
+        time_sec = self.frame_idx / self.fps
+        minutes = int(time_sec // 60)
+        seconds = int(time_sec % 60)
+        self.time_label.setText(f"Time: {minutes:02d}:{seconds:02d}")
+        self.frame_label.setText(f"Frame: {self.frame_idx}")
+
+    def change_speed(self):
+        text = self.speed_combo.currentText()
+        self.speed = float(text[:-1])
+        if self.playing:
+            interval = int(1000 / (self.fps * self.speed))
+            self.timer.setInterval(interval)
+
+    def seek_to_frame(self, value):
+        if self.cap:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, value)
+            ret, frame = self.cap.read()
+            if ret:
+                self.frame_idx = value
+                self.video_widget.frame_idx = value
+                self.video_widget.set_frame(frame)
+                self.update_time_label()
+
+    def play_pause(self):
+        if self.playing:
+            self.timer.stop()
+            self.play_btn.setText("Play")
+        else:
+            interval = int(1000 / (self.fps * self.speed))
+            self.timer.start(interval)
+            self.play_btn.setText("Pause")
+        self.playing = not self.playing
+
+    def next_frame(self):
+        if self.cap:
+            ret, frame = self.cap.read()
+            if ret:
+                self.frame_idx += 1
+                self.video_widget.frame_idx = self.frame_idx
+                self.video_widget.set_frame(frame)
+                self.slider.blockSignals(True)
+                self.slider.setValue(self.frame_idx)
+                self.slider.blockSignals(False)
+                self.update_time_label()
+            else:
+                self.timer.stop()
+                self.playing = False
+                self.play_btn.setText("Play")
+
+    def step_back(self):
+        if self.cap and self.frame_idx > 0:
+            self.frame_idx -= 1
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_idx)
+            ret, frame = self.cap.read()
+            if ret:
+                self.video_widget.frame_idx = self.frame_idx
+                self.video_widget.set_frame(frame)
+                self.slider.blockSignals(True)
+                self.slider.setValue(self.frame_idx)
+                self.slider.blockSignals(False)
+                self.update_time_label()
+
+    def step_forward(self):
+        """Step forward by one frame."""
+        if self.cap:
+            # Calculate next frame index
+            next_idx = self.frame_idx + 1
+            if self.total_frames and next_idx >= self.total_frames:
+                return
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, next_idx)
+            ret, frame = self.cap.read()
+            if ret:
+                self.frame_idx = next_idx
+                self.video_widget.frame_idx = self.frame_idx
+                self.video_widget.set_frame(frame)
+                self.slider.blockSignals(True)
+                self.slider.setValue(self.frame_idx)
+                self.slider.blockSignals(False)
+                self.update_time_label()
 
     def save_config(self):
         """Save config file."""
@@ -246,7 +424,9 @@ def main():
     window = ROIConfigurator(config_path)
     window.show()
 
-    sys.exit(app.exec())
+    # Don't exit the process when GUI closes, so CLI can continue
+    app.exec()
+    # sys.exit(app.exec())  # Removed to allow returning to CLI
 
 
 if __name__ == "__main__":

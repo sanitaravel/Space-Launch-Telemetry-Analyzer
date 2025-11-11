@@ -91,14 +91,6 @@ def edit_existing_config():
 def launch_interactive_gui(config_path=None):
     """Launch the interactive PyQt6 GUI."""
     clear_screen()
-    if config_path:
-        print(f"Launching Interactive ROI Configurator with config: {config_path}")
-    else:
-        print("Launching Interactive ROI Configurator...")
-        print("Note: Make sure you have a config file ready, or create one first.")
-    print("The GUI will allow you to visually select ROIs on video frames.")
-    input("\nPress Enter to launch GUI...")
-    clear_screen()
 
     try:
         # Launch the GUI
