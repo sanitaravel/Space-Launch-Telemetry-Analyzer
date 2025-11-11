@@ -537,6 +537,23 @@ class ROIConfigurator(QMainWindow):
         roi.vehicle = None
         roi.measurement_unit = ""
 
+        # Set default start and end times to cover the entire video
+        if self.total_frames > 0:
+            if self.config.time_unit == "frames":
+                roi.start_time = 0
+                roi.end_time = self.total_frames - 1
+            elif self.config.time_unit in ("seconds", "s"):
+                roi.start_time = 0.0
+                roi.end_time = (self.total_frames - 1) / self.fps
+            else:
+                # Default to frames if unknown unit
+                roi.start_time = 0
+                roi.end_time = self.total_frames - 1
+        else:
+            # No video loaded, set to None
+            roi.start_time = None
+            roi.end_time = None
+
         self.config.rois.append(roi)
         self.update_roi_list()
         self.properties_widget.set_roi(roi)
@@ -568,6 +585,24 @@ class ROIConfigurator(QMainWindow):
         roi = ROIData()
         roi.id = f"ROI_{len(self.config.rois) + 1}"
         roi.label = roi.id
+
+        # Set default start and end times to cover the entire video
+        if self.total_frames > 0:
+            if self.config.time_unit == "frames":
+                roi.start_time = 0
+                roi.end_time = self.total_frames - 1
+            elif self.config.time_unit in ("seconds", "s"):
+                roi.start_time = 0.0
+                roi.end_time = (self.total_frames - 1) / self.fps
+            else:
+                # Default to frames if unknown unit
+                roi.start_time = 0
+                roi.end_time = self.total_frames - 1
+        else:
+            # No video loaded, set to None
+            roi.start_time = None
+            roi.end_time = None
+
         self.config.rois.append(roi)
         self.update_roi_list()
 

@@ -110,6 +110,10 @@ class ROIConfig:
             return False
 
         try:
+            # Increment version if updating an existing file
+            if os.path.exists(self.config_path):
+                self.version += 1
+
             data = {
                 'version': self.version,
                 'video_source': self.video_source,

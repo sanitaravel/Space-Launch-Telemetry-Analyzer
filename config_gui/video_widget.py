@@ -37,6 +37,7 @@ class VideoWidget(QOpenGLWidget):
         self.pan_y = 0
         self.is_panning = False
         self.last_pos = None
+        self.current_pos = None  # Current mouse position during selection
 
     def set_frame(self, frame: np.ndarray):
         self.frame = frame
@@ -231,6 +232,31 @@ class VideoWidget(QOpenGLWidget):
                                 # Draw smaller circles that scale with display
                                 radius = max(1, int(2 * self.display_scale))
                                 painter.drawEllipse(px - radius, py - radius, radius * 2, radius * 2)
+
+            # Draw selection preview rectangle
+            if self.is_selecting and self.start_pos and self.current_pos and self.frame is not None:
+                start_x = (self.start_pos.x() - self.offset_x) / self.display_scale
+                start_y = (self.start_pos.y() - self.offset_y) / self.display_scale
+                end_x = (self.current_pos.x() - self.offset_x) / self.display_scale
+                end_y = (self.current_pos.y() - self.offset_y) / self.display_scale
+
+                x = min(start_x, end_x)
+                y = min(start_y, end_y)
+                w_roi = abs(end_x - start_x)
+                h_roi = abs(end_y - start_y)
+
+                if w_roi > 0 and h_roi > 0:
+                    # Draw preview rectangle with dashed line
+                    preview_color = QColor(255, 255, 255, 180)  # Semi-transparent white
+                    painter.setPen(QPen(preview_color, 2, Qt.PenStyle.DashLine))
+                    painter.setBrush(QBrush(preview_color, Qt.BrushStyle.Dense4Pattern))
+                    painter.drawRect(
+                        int(x * self.scale * self.display_scale + self.offset_x),
+                        int(y * self.scale * self.display_scale + self.offset_y),
+                        int(w_roi * self.scale * self.display_scale),
+                        int(h_roi * self.scale * self.display_scale)
+                    )
+
         painter.end()
 
     def mousePressEvent(self, event):
@@ -251,6 +277,9 @@ class VideoWidget(QOpenGLWidget):
             self.pan_y += delta.y()
             self.last_pos = event.pos()
             self.update()
+        elif self.mode == 'select' and self.is_selecting:
+            self.current_pos = event.pos()
+            self.update()  # Update to show preview rectangle
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -261,6 +290,7 @@ class VideoWidget(QOpenGLWidget):
             if event.button() == Qt.MouseButton.LeftButton and self.is_selecting:
                 self.is_selecting = False
                 end_pos = event.pos()
+                self.current_pos = None  # Clear preview position
                 if self.start_pos and self.frame is not None:
                     # Check if we're adding a point to an engine group
                     if (self.current_roi and 
@@ -327,3 +357,10 @@ class VideoWidget(QOpenGLWidget):
             
             self.update()
         super().wheelEvent(event)
+
+    def leaveEvent(self, event):
+        """Handle mouse leaving the widget."""
+        if self.is_selecting:
+            self.current_pos = None
+            self.update()
+        super().leaveEvent(event)
