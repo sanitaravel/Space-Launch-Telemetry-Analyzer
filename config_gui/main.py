@@ -286,6 +286,13 @@ class ROIConfigurator(QMainWindow):
         self.speed_9_shortcut = QShortcut(QKeySequence(Qt.Key.Key_9), self)
         self.speed_9_shortcut.activated.connect(lambda: self.set_speed_by_index(8))  # 64x
 
+        # ROI navigation: [ and ] jump to start/end of selected ROI
+        self.roi_start_shortcut = QShortcut(QKeySequence(Qt.Key.Key_BracketLeft), self)
+        self.roi_start_shortcut.activated.connect(self.jump_to_roi_start)
+
+        self.roi_end_shortcut = QShortcut(QKeySequence(Qt.Key.Key_BracketRight), self)
+        self.roi_end_shortcut.activated.connect(self.jump_to_roi_end)
+
     def toggle_zoom_mode(self):
         """Toggle between select and zoom modes."""
         if self.video_widget.mode == 'select':
@@ -331,6 +338,18 @@ class ROIConfigurator(QMainWindow):
             self.speed_combo.setCurrentIndex(index)
             # The change_speed method will be called automatically due to the signal connection
 
+    def jump_to_roi_start(self):
+        """Jump to the start frame/time of the currently selected ROI."""
+        if self.current_roi and self.current_roi.start_time is not None:
+            target_frame = int(self.current_roi.start_time)
+            self.seek_to_frame(target_frame)
+
+    def jump_to_roi_end(self):
+        """Jump to the end frame/time of the currently selected ROI."""
+        if self.current_roi and self.current_roi.end_time is not None:
+            target_frame = int(self.current_roi.end_time)
+            self.seek_to_frame(target_frame)
+
     def reset_zoom(self):
         """Reset zoom to fit the image."""
         self.video_widget.reset_zoom()
@@ -356,7 +375,9 @@ class ROIConfigurator(QMainWindow):
 • Ctrl+A: Add new ROI<br>
 • Delete: Delete selected ROI<br>
 • Up Arrow: Navigate to previous ROI<br>
-• Down Arrow: Navigate to next ROI<br><br>
+• Down Arrow: Navigate to next ROI<br>
+• [: Jump to start of selected ROI<br>
+• ]: Jump to end of selected ROI<br><br>
 
 <b>Time Settings:</b><br>
 • Ctrl+T: Set start time/frame to current position<br>
