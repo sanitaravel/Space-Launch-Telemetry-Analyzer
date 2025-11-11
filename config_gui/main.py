@@ -183,8 +183,11 @@ class ROIConfigurator(QMainWindow):
         self.select_action.setChecked(True)
         self.zoom_action = QAction('Zoom', self)
         self.zoom_action.setCheckable(True)
+        self.reset_zoom_action = QAction('Reset Zoom', self)
         view_menu.addAction(self.select_action)
         view_menu.addAction(self.zoom_action)
+        view_menu.addSeparator()
+        view_menu.addAction(self.reset_zoom_action)
 
         # Group them
         self.mode_group = QActionGroup(self)
@@ -193,6 +196,11 @@ class ROIConfigurator(QMainWindow):
 
         self.select_action.triggered.connect(lambda: self.set_mode('select'))
         self.zoom_action.triggered.connect(lambda: self.set_mode('zoom'))
+        self.reset_zoom_action.triggered.connect(self.reset_zoom)
+
+    def reset_zoom(self):
+        """Reset zoom to fit the image."""
+        self.video_widget.reset_zoom()
 
     def set_mode(self, mode):
         """Set the interaction mode for the video widget."""

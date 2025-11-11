@@ -40,6 +40,19 @@ class VideoWidget(QOpenGLWidget):
 
     def set_frame(self, frame: np.ndarray):
         self.frame = frame
+        # If zoom not set, fit to widget
+        if self.zoom_factor == 1.0 and self.pan_x == 0 and self.pan_y == 0:
+            h, w, c = self.frame.shape
+            widget_w = self.width()
+            widget_h = self.height()
+            if widget_w > 0 and widget_h > 0 and w > 0 and h > 0:
+                aspect = w / h
+                if widget_w / widget_h > aspect:
+                    self.zoom_factor = widget_h / h
+                else:
+                    self.zoom_factor = widget_w / w
+                self.pan_x = int((widget_w - w * self.zoom_factor) // 2)
+                self.pan_y = int((widget_h - h * self.zoom_factor) // 2)
         self.update()
 
     def set_rois(self, rois):
@@ -58,6 +71,26 @@ class VideoWidget(QOpenGLWidget):
     def set_mode(self, mode: str):
         """Set the interaction mode: 'select' or 'zoom'."""
         self.mode = mode
+        self.update()
+
+    def reset_zoom(self):
+        """Reset zoom to fit the image."""
+        if self.frame is not None:
+            h, w, c = self.frame.shape
+            widget_w = self.width()
+            widget_h = self.height()
+            if widget_w > 0 and widget_h > 0 and w > 0 and h > 0:
+                aspect = w / h
+                if widget_w / widget_h > aspect:
+                    self.zoom_factor = widget_h / h
+                else:
+                    self.zoom_factor = widget_w / w
+                self.pan_x = int((widget_w - w * self.zoom_factor) // 2)
+                self.pan_y = int((widget_h - h * self.zoom_factor) // 2)
+            else:
+                self.zoom_factor = 1.0
+                self.pan_x = 0
+                self.pan_y = 0
         self.update()
 
     def is_active(self, roi, frame_idx: int) -> bool:
@@ -159,43 +192,16 @@ class VideoWidget(QOpenGLWidget):
             bytes_per_line = 3 * w
             qimg = QImage(self.frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888).rgbSwapped()
 
-            if self.mode == 'zoom':
-                # Use zoom_factor and pan
-                scaled_w = int(w * self.zoom_factor)
-                scaled_h = int(h * self.zoom_factor)
-                x = self.pan_x
-                y = self.pan_y
-                scaled_qimg = qimg.scaled(scaled_w, scaled_h, Qt.AspectRatioMode.IgnoreAspectRatio)
-                painter.drawImage(x, y, scaled_qimg)
-                self.display_scale = self.zoom_factor
-                self.offset_x = x
-                self.offset_y = y
-            else:
-                # Fit to widget
-                widget_w = self.width()
-                widget_h = self.height()
-                if w > 0 and h > 0:
-                    aspect = w / h
-                    if widget_w / widget_h > aspect:
-                        scaled_h = widget_h
-                        scaled_w = int(widget_h * aspect)
-                        x = (widget_w - scaled_w) // 2
-                        y = 0
-                    else:
-                        scaled_w = widget_w
-                        scaled_h = int(widget_w / aspect)
-                        x = 0
-                        y = (widget_h - scaled_h) // 2
-                    self.display_scale = scaled_w / w
-                    self.offset_x = x
-                    self.offset_y = y
-                    scaled_qimg = qimg.scaled(scaled_w, scaled_h, Qt.AspectRatioMode.KeepAspectRatio)
-                    painter.drawImage(x, y, scaled_qimg)
-                else:
-                    painter.drawImage(0, 0, qimg)
-                    self.display_scale = 1.0
-                    self.offset_x = 0
-                    self.offset_y = 0
+            # Always use zoom_factor and pan
+            scaled_w = int(w * self.zoom_factor)
+            scaled_h = int(h * self.zoom_factor)
+            x = self.pan_x
+            y = self.pan_y
+            scaled_qimg = qimg.scaled(scaled_w, scaled_h, Qt.AspectRatioMode.IgnoreAspectRatio)
+            painter.drawImage(x, y, scaled_qimg)
+            self.display_scale = self.zoom_factor
+            self.offset_x = x
+            self.offset_y = y
 
             # Draw ROIs scaled and offset
             for roi in self.rois:
