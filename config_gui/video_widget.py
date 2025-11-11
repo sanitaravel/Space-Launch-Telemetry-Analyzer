@@ -187,6 +187,20 @@ class VideoWidget(QOpenGLWidget):
                         text = f"{label} ({role}, {measurement_unit})"
                     painter.setPen(QPen(qcolor, 1))
                     painter.drawText(max(8, x_roi), max(20, y_roi - 6), text)
+
+                    # Draw engine points if they exist
+                    if "points" in roi and isinstance(roi["points"], dict):
+                        for group_name, pts in roi["points"].items():
+                            if not pts:
+                                continue
+                            painter.setPen(QPen(qcolor, 2))
+                            painter.setBrush(QBrush(qcolor))
+                            for pt in pts:
+                                px = int((pt[0] * self.scale * self.display_scale) + self.offset_x)
+                                py = int((pt[1] * self.scale * self.display_scale) + self.offset_y)
+                                # Draw smaller circles that scale with display
+                                radius = max(1, int(2 * self.display_scale))
+                                painter.drawEllipse(px - radius, py - radius, radius * 2, radius * 2)
         painter.end()
 
     def mousePressEvent(self, event):
