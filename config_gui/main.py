@@ -181,9 +181,9 @@ class ROIConfigurator(QMainWindow):
         self.select_action = QAction('Select ROI', self)
         self.select_action.setCheckable(True)
         self.select_action.setChecked(True)
-        self.zoom_action = QAction('Zoom', self)
+        self.zoom_action = QAction('Zoom and Pan', self)
         self.zoom_action.setCheckable(True)
-        self.reset_zoom_action = QAction('Reset Zoom', self)
+        self.reset_zoom_action = QAction('Reset Zoom and Pan', self)
         view_menu.addAction(self.select_action)
         view_menu.addAction(self.zoom_action)
         view_menu.addSeparator()
@@ -265,6 +265,8 @@ class ROIConfigurator(QMainWindow):
                 self.update_time_label()
                 self.properties_widget.set_current_frame_info(0, self.fps, self.config.time_unit)
                 self.status_bar.showMessage(f"Loaded video: {os.path.basename(video_path)}", 3000)
+                # Fit the video to the widget
+                self.video_widget.reset_zoom()
             else:
                 self.status_bar.showMessage("Failed to read first frame", 3000)
         else:

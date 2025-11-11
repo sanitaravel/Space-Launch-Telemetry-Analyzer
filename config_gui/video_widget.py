@@ -40,19 +40,6 @@ class VideoWidget(QOpenGLWidget):
 
     def set_frame(self, frame: np.ndarray):
         self.frame = frame
-        # If zoom not set, fit to widget
-        if self.zoom_factor == 1.0 and self.pan_x == 0 and self.pan_y == 0:
-            h, w, c = self.frame.shape
-            widget_w = self.width()
-            widget_h = self.height()
-            if widget_w > 0 and widget_h > 0 and w > 0 and h > 0:
-                aspect = w / h
-                if widget_w / widget_h > aspect:
-                    self.zoom_factor = widget_h / h
-                else:
-                    self.zoom_factor = widget_w / w
-                self.pan_x = int((widget_w - w * self.zoom_factor) // 2)
-                self.pan_y = int((widget_h - h * self.zoom_factor) // 2)
         self.update()
 
     def set_rois(self, rois):
@@ -321,11 +308,22 @@ class VideoWidget(QOpenGLWidget):
 
     def wheelEvent(self, event):
         if self.mode == 'zoom':
+            mouse_pos = event.position().toPoint()
+            # Calculate image coordinates under mouse before zoom
+            img_x = (mouse_pos.x() - self.pan_x) / self.zoom_factor
+            img_y = (mouse_pos.y() - self.pan_y) / self.zoom_factor
+            
+            # Change zoom
             delta = event.angleDelta().y()
             if delta > 0:
                 self.zoom_factor *= 1.2
             else:
                 self.zoom_factor /= 1.2
-            self.zoom_factor = max(0.1, min(10, self.zoom_factor))  # clamp
+            self.zoom_factor = max(0.1, min(10, self.zoom_factor))
+            
+            # Adjust pan to keep img_x, img_y under mouse
+            self.pan_x = int(mouse_pos.x() - img_x * self.zoom_factor)
+            self.pan_y = int(mouse_pos.y() - img_y * self.zoom_factor)
+            
             self.update()
         super().wheelEvent(event)
