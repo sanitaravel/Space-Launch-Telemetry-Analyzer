@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QListWidget, QListWidgetItem, QGroupBox, QPushButton,
     QMessageBox, QFileDialog, QSlider, QLabel, QComboBox
 )
+from PyQt6.QtGui import QActionGroup
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QAction
 
@@ -53,6 +54,7 @@ class ROIConfigurator(QMainWindow):
 
         # Video widget
         self.video_widget = VideoWidget()
+        self.video_widget.set_mode('select')
         video_layout.addWidget(self.video_widget, 1)
 
         # Timeline slider
@@ -164,18 +166,37 @@ class ROIConfigurator(QMainWindow):
 
         # File menu
         file_menu = menubar.addMenu('File')
-        open_action = QAction('Open Config', self)
         save_action = QAction('Save Config', self)
         exit_action = QAction('Exit', self)
 
-        open_action.triggered.connect(self.open_config)
         save_action.triggered.connect(self.save_config)
         exit_action.triggered.connect(self.close)
 
-        file_menu.addAction(open_action)
         file_menu.addAction(save_action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
+
+        # View menu
+        view_menu = menubar.addMenu('View')
+        self.select_action = QAction('Select ROI', self)
+        self.select_action.setCheckable(True)
+        self.select_action.setChecked(True)
+        self.zoom_action = QAction('Zoom', self)
+        self.zoom_action.setCheckable(True)
+        view_menu.addAction(self.select_action)
+        view_menu.addAction(self.zoom_action)
+
+        # Group them
+        self.mode_group = QActionGroup(self)
+        self.mode_group.addAction(self.select_action)
+        self.mode_group.addAction(self.zoom_action)
+
+        self.select_action.triggered.connect(lambda: self.set_mode('select'))
+        self.zoom_action.triggered.connect(lambda: self.set_mode('zoom'))
+
+    def set_mode(self, mode):
+        """Set the interaction mode for the video widget."""
+        self.video_widget.set_mode(mode)
 
     def update_title(self):
         """Update window title with config path."""
