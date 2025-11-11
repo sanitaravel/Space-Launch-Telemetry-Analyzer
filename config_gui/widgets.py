@@ -179,7 +179,10 @@ class ROIPropertiesWidget(QWidget):
         basic_group = QGroupBox("Basic Properties")
         basic_layout = QFormLayout()
 
-        self.id_edit = QLineEdit()
+        self.id_edit = QComboBox()
+        self.id_edit.addItems([
+            'engines', 'speed', 'altitude', 'time'
+        ])
         self.label_edit = QLineEdit()
         self.vehicle_combo = QComboBox()
         self.vehicle_combo.setEditable(True)
@@ -243,7 +246,7 @@ class ROIPropertiesWidget(QWidget):
     def set_roi(self, roi: ROIData):
         """Set current ROI for editing."""
         self.current_roi = roi
-        self.id_edit.setText(roi.id)
+        self.id_edit.setCurrentText(roi.id)
         self.label_edit.setText(roi.label)
         vehicle = roi.vehicle if roi.vehicle else ''
         self.vehicle_combo.setCurrentText(vehicle)
@@ -259,7 +262,7 @@ class ROIPropertiesWidget(QWidget):
         if not self.current_roi:
             return
 
-        self.current_roi.id = self.id_edit.text()
+        self.current_roi.id = self.id_edit.currentText()
         self.current_roi.label = self.label_edit.text()
         vehicle_text = self.vehicle_combo.currentText()
         self.current_roi.vehicle = vehicle_text if vehicle_text else None
