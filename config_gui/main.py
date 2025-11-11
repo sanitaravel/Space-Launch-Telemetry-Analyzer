@@ -86,7 +86,7 @@ class ROIConfigurator(QMainWindow):
         controls_layout.addWidget(self.step_forward_btn)
 
         self.speed_combo = QComboBox()
-        self.speed_combo.addItems(["0.25x", "0.5x", "1x", "2x", "4x"])
+        self.speed_combo.addItems(["0.25x", "0.5x", "1x", "2x", "4x", "8x", "16x", "32x", "64x"])
         self.speed_combo.setCurrentText("1x")
         self.speed_combo.currentTextChanged.connect(self.change_speed)
         controls_layout.addWidget(self.speed_combo)
