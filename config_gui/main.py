@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QActionGroup
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QShortcut, QKeySequence
 
 from .models import ROIConfig, ROIData
 from .widgets import VideoWidget, ROIPropertiesWidget
@@ -32,6 +32,7 @@ class ROIConfigurator(QMainWindow):
 
         self.setup_ui()
         self.setup_menu()
+        self.setup_shortcuts()
         self.update_title()
 
         if config_path:
@@ -197,6 +198,93 @@ class ROIConfigurator(QMainWindow):
         self.select_action.triggered.connect(lambda: self.set_mode('select'))
         self.zoom_action.triggered.connect(lambda: self.set_mode('zoom'))
         self.reset_zoom_action.triggered.connect(self.reset_zoom)
+
+    def setup_shortcuts(self):
+        """Setup keyboard shortcuts."""
+        # Ctrl+S: Save config
+        self.save_shortcut = QShortcut(QKeySequence.StandardKey.Save, self)
+        self.save_shortcut.activated.connect(self.save_config)
+
+        # Space: Play/Pause toggle
+        self.play_pause_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
+        self.play_pause_shortcut.activated.connect(self.play_pause)
+
+        # Left/Right arrows: Frame stepping
+        self.step_back_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Left), self)
+        self.step_back_shortcut.activated.connect(self.step_back)
+
+        self.step_forward_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Right), self)
+        self.step_forward_shortcut.activated.connect(self.step_forward)
+
+        # Ctrl+A: Add new ROI
+        self.add_roi_shortcut = QShortcut(QKeySequence("Ctrl+A"), self)
+        self.add_roi_shortcut.activated.connect(self.add_roi)
+
+        # Delete: Delete selected ROI
+        self.delete_roi_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Delete), self)
+        self.delete_roi_shortcut.activated.connect(self.delete_roi)
+
+        # Ctrl+Z: Toggle zoom/pan mode
+        self.toggle_zoom_shortcut = QShortcut(QKeySequence("Ctrl+Z"), self)
+        self.toggle_zoom_shortcut.activated.connect(self.toggle_zoom_mode)
+
+        # Ctrl+R: Reset zoom and pan
+        self.reset_zoom_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
+        self.reset_zoom_shortcut.activated.connect(self.reset_zoom)
+
+        # Ctrl+T: Set start time/frame to current position
+        self.set_start_now_shortcut = QShortcut(QKeySequence("Ctrl+T"), self)
+        self.set_start_now_shortcut.activated.connect(self.set_start_to_current)
+
+        # Ctrl+E: Set end time/frame to current position
+        self.set_end_now_shortcut = QShortcut(QKeySequence("Ctrl+E"), self)
+        self.set_end_now_shortcut.activated.connect(self.set_end_to_current)
+
+        # Up/Down arrows: Navigate ROI list
+        self.roi_up_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Up), self)
+        self.roi_up_shortcut.activated.connect(self.navigate_roi_up)
+
+        self.roi_down_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Down), self)
+        self.roi_down_shortcut.activated.connect(self.navigate_roi_down)
+
+    def toggle_zoom_mode(self):
+        """Toggle between select and zoom modes."""
+        if self.video_widget.mode == 'select':
+            self.set_mode('zoom')
+            self.zoom_action.setChecked(True)
+        else:
+            self.set_mode('select')
+            self.select_action.setChecked(True)
+
+    def set_start_to_current(self):
+        """Set start time/frame to current position."""
+        if self.current_roi:
+            self.properties_widget.on_start_now()
+
+    def set_end_to_current(self):
+        """Set end time/frame to current position."""
+        if self.current_roi:
+            self.properties_widget.on_end_now()
+
+    def navigate_roi_up(self):
+        """Navigate to previous ROI in the list."""
+        current_row = self.roi_list.currentRow()
+        if current_row > 0:
+            self.roi_list.setCurrentRow(current_row - 1)
+            # Trigger selection
+            item = self.roi_list.currentItem()
+            if item:
+                self.on_roi_selected(item)
+
+    def navigate_roi_down(self):
+        """Navigate to next ROI in the list."""
+        current_row = self.roi_list.currentRow()
+        if current_row < self.roi_list.count() - 1:
+            self.roi_list.setCurrentRow(current_row + 1)
+            # Trigger selection
+            item = self.roi_list.currentItem()
+            if item:
+                self.on_roi_selected(item)
 
     def reset_zoom(self):
         """Reset zoom to fit the image."""
