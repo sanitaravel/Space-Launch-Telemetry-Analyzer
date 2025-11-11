@@ -199,6 +199,17 @@ class ROIConfigurator(QMainWindow):
         self.zoom_action.triggered.connect(lambda: self.set_mode('zoom'))
         self.reset_zoom_action.triggered.connect(self.reset_zoom)
 
+        # Help menu
+        help_menu = menubar.addMenu('Help')
+        hotkeys_action = QAction('Keyboard Shortcuts', self)
+        about_action = QAction('About GUI Components', self)
+
+        hotkeys_action.triggered.connect(self.show_hotkeys_help)
+        about_action.triggered.connect(self.show_gui_components_help)
+
+        help_menu.addAction(hotkeys_action)
+        help_menu.addAction(about_action)
+
     def setup_shortcuts(self):
         """Setup keyboard shortcuts."""
         # Ctrl+S: Save config
@@ -247,6 +258,34 @@ class ROIConfigurator(QMainWindow):
         self.roi_down_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Down), self)
         self.roi_down_shortcut.activated.connect(self.navigate_roi_down)
 
+        # Speed selection: 1-9 keys
+        self.speed_1_shortcut = QShortcut(QKeySequence(Qt.Key.Key_1), self)
+        self.speed_1_shortcut.activated.connect(lambda: self.set_speed_by_index(0))  # 0.25x
+
+        self.speed_2_shortcut = QShortcut(QKeySequence(Qt.Key.Key_2), self)
+        self.speed_2_shortcut.activated.connect(lambda: self.set_speed_by_index(1))  # 0.5x
+
+        self.speed_3_shortcut = QShortcut(QKeySequence(Qt.Key.Key_3), self)
+        self.speed_3_shortcut.activated.connect(lambda: self.set_speed_by_index(2))  # 1x
+
+        self.speed_4_shortcut = QShortcut(QKeySequence(Qt.Key.Key_4), self)
+        self.speed_4_shortcut.activated.connect(lambda: self.set_speed_by_index(3))  # 2x
+
+        self.speed_5_shortcut = QShortcut(QKeySequence(Qt.Key.Key_5), self)
+        self.speed_5_shortcut.activated.connect(lambda: self.set_speed_by_index(4))  # 4x
+
+        self.speed_6_shortcut = QShortcut(QKeySequence(Qt.Key.Key_6), self)
+        self.speed_6_shortcut.activated.connect(lambda: self.set_speed_by_index(5))  # 8x
+
+        self.speed_7_shortcut = QShortcut(QKeySequence(Qt.Key.Key_7), self)
+        self.speed_7_shortcut.activated.connect(lambda: self.set_speed_by_index(6))  # 16x
+
+        self.speed_8_shortcut = QShortcut(QKeySequence(Qt.Key.Key_8), self)
+        self.speed_8_shortcut.activated.connect(lambda: self.set_speed_by_index(7))  # 32x
+
+        self.speed_9_shortcut = QShortcut(QKeySequence(Qt.Key.Key_9), self)
+        self.speed_9_shortcut.activated.connect(lambda: self.set_speed_by_index(8))  # 64x
+
     def toggle_zoom_mode(self):
         """Toggle between select and zoom modes."""
         if self.video_widget.mode == 'select':
@@ -286,9 +325,101 @@ class ROIConfigurator(QMainWindow):
             if item:
                 self.on_roi_selected(item)
 
+    def set_speed_by_index(self, index: int):
+        """Set playback speed by combo box index."""
+        if 0 <= index < self.speed_combo.count():
+            self.speed_combo.setCurrentIndex(index)
+            # The change_speed method will be called automatically due to the signal connection
+
     def reset_zoom(self):
         """Reset zoom to fit the image."""
         self.video_widget.reset_zoom()
+
+    def show_hotkeys_help(self):
+        """Show keyboard shortcuts help dialog."""
+        hotkeys_text = """
+<b>Keyboard Shortcuts</b><br><br>
+
+<b>File Operations:</b><br>
+• Ctrl+S: Save configuration<br>
+• Ctrl+Q: Quit application<br><br>
+
+<b>Video Playback:</b><br>
+• Space: Play/Pause toggle<br>
+• Left Arrow: Step backward one frame<br>
+• Right Arrow: Step forward one frame<br>
+• 1: 0.25x speed, 2: 0.5x speed, 3: 1x speed<br>
+• 4: 2x speed, 5: 4x speed, 6: 8x speed<br>
+• 7: 16x speed, 8: 32x speed, 9: 64x speed<br><br>
+
+<b>ROI Management:</b><br>
+• Ctrl+A: Add new ROI<br>
+• Delete: Delete selected ROI<br>
+• Up Arrow: Navigate to previous ROI<br>
+• Down Arrow: Navigate to next ROI<br><br>
+
+<b>Time Settings:</b><br>
+• Ctrl+T: Set start time/frame to current position<br>
+• Ctrl+E: Set end time/frame to current position<br><br>
+
+<b>View Controls:</b><br>
+• Ctrl+Z: Toggle zoom/pan mode<br>
+• Ctrl+R: Reset zoom and pan to fit<br><br>
+
+<b>Mouse Controls:</b><br>
+• Left Click + Drag: Select ROI (in select mode) or pan (in zoom mode)<br>
+• Mouse Wheel: Zoom in/out (in zoom mode)<br>
+• Right Click: Context menu (future feature)
+        """
+
+        QMessageBox.about(self, "Keyboard Shortcuts", hotkeys_text)
+
+    def show_gui_components_help(self):
+        """Show GUI components help dialog."""
+        components_text = """
+<b>GUI Components Guide</b><br><br>
+
+<b>Main Video Area:</b><br>
+• Displays the video frames with ROI overlays<br>
+• Shows colored rectangles for each ROI<br>
+• Supports zoom and pan when in zoom mode<br>
+• Click and drag to create new ROIs in select mode<br><br>
+
+<b>Video Controls:</b><br>
+• Play/Pause: Start or stop video playback<br>
+• Step buttons: Move forward/backward one frame<br>
+• Timeline slider: Jump to specific frame<br>
+• Speed combo: Change playback speed<br>
+• Time/Frame labels: Current position display<br><br>
+
+<b>ROI List Panel:</b><br>
+• Shows all configured ROIs<br>
+• Format: "ID: Label (vehicle)"<br>
+• Click to select and edit ROI<br>
+• Add/Edit/Delete buttons for ROI management<br><br>
+
+<b>Properties Panel:</b><br>
+• Basic Properties: ID, Label, Vehicle, Measurement Unit<br>
+• Time Settings: Start/End frames with "Now" buttons<br>
+• Geometry: Rectangle coordinates (X, Y, Width, Height)<br>
+• For engines: Point-based geometry with groups<br><br>
+
+<b>Status Bar:</b><br>
+• Shows current status messages<br>
+• Displays loading progress and error messages<br><br>
+
+<b>Menu Bar:</b><br>
+• File: Save configuration, Exit<br>
+• View: Select ROI mode, Zoom mode, Reset zoom<br>
+• Help: This guide and keyboard shortcuts<br><br>
+
+<b>Interaction Modes:</b><br>
+• Select ROI: Click and drag to create/select ROIs<br>
+• Zoom and Pan: Mouse wheel to zoom, drag to pan<br>
+• Toggle between modes with Ctrl+Z or View menu
+        """
+
+        QMessageBox.about(self, "GUI Components Guide", components_text)
 
     def set_mode(self, mode):
         """Set the interaction mode for the video widget."""
