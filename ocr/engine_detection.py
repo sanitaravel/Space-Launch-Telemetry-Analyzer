@@ -105,7 +105,7 @@ def detect_engine_status(image: np.ndarray, debug: bool = False, roi_manager: Op
         try:
             active = mgr.get_active_rois(frame_idx)
             for r in active:
-                if getattr(r, "match_to_role", None) and "engine" in (r.match_to_role or "").lower():
+                if r.id == "engines" and r.vehicle in ["superheavy", "starship"]:
                     has_engine_roi = True
                     break
         except Exception:
@@ -119,13 +119,10 @@ def detect_engine_status(image: np.ndarray, debug: bool = False, roi_manager: Op
     if mgr is not None and has_engine_roi:
         try:
             for r in mgr.get_active_rois(frame_idx):
-                role = getattr(r, "match_to_role", None)
-                logger.debug(f"Found ROI with role: {role}, points: {getattr(r, 'points', None)}")
-                if not role:
-                    continue
-                if role.lower() == "sh_engines" and getattr(r, "points", None):
+                logger.debug(f"Found ROI with id: {r.id}, vehicle: {r.vehicle}, points: {getattr(r, 'points', None)}")
+                if r.id == "engines" and r.vehicle == "superheavy" and getattr(r, "points", None):
                     sh_points = r.points
-                if role.lower() == "ss_engines" and getattr(r, "points", None):
+                if r.id == "engines" and r.vehicle == "starship" and getattr(r, "points", None):
                     ss_points = r.points
         except Exception:
             # If reading from manager fails, we'll fall back to constants below

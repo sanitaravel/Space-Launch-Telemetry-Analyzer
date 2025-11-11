@@ -1,9 +1,15 @@
 {
   "version": 1,
+  "video_source": {
+    "type": "twitter/x",
+    "url": "https://x.com/i/broadcasts/1RDGlydZAeOJL"
+  },
   "time_unit": "frames",
+  "vehicles": ["superheavy", "starship"],
   "rois": [
     {
-      "id": "SH_SPEED",
+      "id": "speed",
+      "vehicle": "superheavy",
       "label": "Superheavy Speed",
       "y": 913,
       "h": 25,
@@ -11,10 +17,11 @@
       "w": 83,
       "start_time": null,
       "end_time": null,
-      "match_to_role": "sh_speed"
+      "measurement_unit": "km/h"
     },
     {
-      "id": "SH_ALTITUDE",
+      "id": "altitude",
+      "vehicle": "superheavy",
       "label": "Superheavy Altitude",
       "y": 948,
       "h": 25,
@@ -22,10 +29,11 @@
       "w": 50,
       "start_time": null,
       "end_time": null,
-      "match_to_role": "sh_altitude"
+      "measurement_unit": "km"
     },
     {
-      "id": "SS_SPEED",
+      "id": "speed",
+      "vehicle": "starship",
       "label": "Starship Speed",
       "y": 913,
       "h": 25,
@@ -33,10 +41,11 @@
       "w": 83,
       "start_time": null,
       "end_time": null,
-      "match_to_role": "ss_speed"
+      "measurement_unit": "km/h"
     },
     {
-      "id": "SS_ALTITUDE",
+      "id": "altitude",
+      "vehicle": "starship",
       "label": "Starship Altitude",
       "y": 948,
       "h": 25,
@@ -44,10 +53,11 @@
       "w": 50,
       "start_time": null,
       "end_time": null,
-      "match_to_role": "ss_altitude"
+      "measurement_unit": "km"
     },
     {
-      "id": "TIME",
+      "id": "time",
+      "vehicle": null,
       "label": "Time Display",
       "y": 940,
       "h": 44,
@@ -55,11 +65,11 @@
       "w": 197,
       "start_time": null,
       "end_time": null,
-      "match_to_role": "time"
-    }
-    ,
+      "measurement_unit": "[+-]\\d{2}:\\d{2}:\\d{2}"
+    },
     {
-      "id": "SH_ENGINES",
+      "id": "engines",
+      "vehicle": "superheavy",
       "label": "Superheavy Engine Points",
       "y": 0,
       "h": 0,
@@ -67,15 +77,51 @@
       "w": 0,
       "start_time": null,
       "end_time": null,
-      "match_to_role": "sh_engines",
       "points": {
-        "central_stack": [[109, 970], [120, 989], [98, 989]],
-        "inner_ring": [[102, 1018], [82, 1006], [74, 986], [78, 964], [94, 950], [116, 948], [136, 958], [144, 978], [140, 1000], [124, 1016]],
-        "outer_ring": [[106, 1044], [86, 1040], [70, 1030], [57, 1016], [49, 998], [47, 980], [51, 960], [61, 944], [75, 930], [93, 922], [112, 920], [131, 924], [148, 934], [161, 948], [169, 966], [171, 986], [167, 1005], [157, 1022], [143, 1034], [125, 1042]]
+        "central_stack": [
+          [109, 970],
+          [98, 989],
+          [120, 989]
+        ],
+        "inner_ring": [
+          [109, 946],
+          [88, 953],
+          [130, 953],
+          [75, 970],
+          [143, 971],
+          [75, 993],
+          [143, 993],
+          [87, 1011],
+          [130, 1011],
+          [109, 1019]
+        ],
+        "outer_ring": [
+          [98, 921],
+          [118, 921],
+          [80, 927],
+          [137, 927],
+          [153, 938],
+          [64, 939],
+          [53, 953],
+          [164, 954],
+          [47, 973],
+          [170, 973],
+          [170, 992],
+          [47, 993],
+          [164, 1010],
+          [53, 1011],
+          [153, 1025],
+          [65, 1026],
+          [137, 1037],
+          [80, 1038],
+          [99, 1044],
+          [118, 1044]
+        ]
       }
     },
     {
-      "id": "SS_ENGINES",
+      "id": "engines",
+      "vehicle": "starship",
       "label": "Starship Engine Points",
       "y": 0,
       "h": 0,
@@ -83,10 +129,17 @@
       "w": 0,
       "start_time": null,
       "end_time": null,
-      "match_to_role": "ss_engines",
       "points": {
-        "rearth": [[1801, 986], [1830, 986], [1815, 1012]],
-        "rvac": [[1764, 1024], [1815, 937], [1866, 1024]]
+        "rearth": [
+          [1815, 952],
+          [1801, 978],
+          [1830, 978]
+        ],
+        "rvac": [
+          [1764, 939],
+          [1866, 940],
+          [1815, 1028]
+        ]
       }
     }
   ]

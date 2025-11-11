@@ -216,9 +216,6 @@ Per-ROI object fields
 - `points` (object, optional)
   - For engine detection ROIs, defines key points for engine flame analysis. Contains arrays of [x,y] coordinates for different engine components.
 
-- `match_to_role` (string, optional)
-  - Legacy field for mapping to telemetry fields (e.g., `ss_altitude`). Used in older config versions.
-
 Notes and best practices
 
 - Coordinates and sizes are integer pixel values — double-check these values at the video resolution you are analyzing (e.g., 1920x1080 vs 1280x720).

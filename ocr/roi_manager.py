@@ -109,14 +109,6 @@ class ROIManager:
         with self._lock:
             return [r for r in self._rois if r.is_active(frame_idx)]
 
-    def get_roi_for_role(self, role: str, frame_idx: Optional[int] = None) -> Optional[ROI]:
-        """Return the first ROI matching match_to_role==role and active at frame_idx, or None."""
-        with self._lock:
-            for r in self._rois:
-                if r.match_to_role == role and r.is_active(frame_idx):
-                    return r
-            return None
-
     def get_roi_for_id(self, roi_id: str, vehicle: Optional[str] = None, frame_idx: Optional[int] = None) -> Optional[ROI]:
         """Return the first ROI matching id and optionally vehicle, active at frame_idx."""
         with self._lock:

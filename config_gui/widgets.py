@@ -147,15 +147,16 @@ class ROIPropertiesWidget(QWidget):
 
         self.id_edit = QLineEdit()
         self.label_edit = QLineEdit()
-        self.role_combo = QComboBox()
-        self.role_combo.addItems([
-            'sh_speed', 'sh_altitude', 'ss_speed', 'ss_altitude',
-            'time', 'sh_engines', 'ss_engines'
+        self.vehicle_combo = QComboBox()
+        self.vehicle_combo.addItems([
+            '', 'superheavy', 'starship'
         ])
+        self.measurement_unit_edit = QLineEdit()
 
         basic_layout.addRow("ID:", self.id_edit)
         basic_layout.addRow("Label:", self.label_edit)
-        basic_layout.addRow("Match to Role:", self.role_combo)
+        basic_layout.addRow("Vehicle:", self.vehicle_combo)
+        basic_layout.addRow("Measurement Unit:", self.measurement_unit_edit)
         basic_group.setLayout(basic_layout)
 
         # Geometry properties
@@ -202,7 +203,9 @@ class ROIPropertiesWidget(QWidget):
         self.current_roi = roi
         self.id_edit.setText(roi.id)
         self.label_edit.setText(roi.label)
-        self.role_combo.setCurrentText(roi.match_to_role)
+        vehicle = roi.vehicle if roi.vehicle else ''
+        self.vehicle_combo.setCurrentText(vehicle)
+        self.measurement_unit_edit.setText(roi.measurement_unit)
         self.rect_radio.setChecked(roi.is_rectangle())
         self.x_spin.setValue(roi.x)
         self.y_spin.setValue(roi.y)
@@ -216,7 +219,9 @@ class ROIPropertiesWidget(QWidget):
 
         self.current_roi.id = self.id_edit.text()
         self.current_roi.label = self.label_edit.text()
-        self.current_roi.match_to_role = self.role_combo.currentText()
+        vehicle_text = self.vehicle_combo.currentText()
+        self.current_roi.vehicle = vehicle_text if vehicle_text else None
+        self.current_roi.measurement_unit = self.measurement_unit_edit.text()
         self.current_roi.x = self.x_spin.value()
         self.current_roi.y = self.y_spin.value()
         self.current_roi.w = self.w_spin.value()

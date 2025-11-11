@@ -15,6 +15,7 @@ class ROIData:
     """Data class for ROI information."""
     def __init__(self, roi_dict: Optional[Dict[str, Any]] = None):
         self.id = ""
+        self.vehicle = None
         self.label = ""
         self.x = 0
         self.y = 0
@@ -22,7 +23,7 @@ class ROIData:
         self.h = 0
         self.start_time = None
         self.end_time = None
-        self.match_to_role = ""
+        self.measurement_unit = ""
         self.points = {}  # For engine ROIs
 
         if roi_dict:
@@ -31,6 +32,7 @@ class ROIData:
     def from_dict(self, data: Dict[str, Any]):
         """Load from dictionary."""
         self.id = data.get('id', '')
+        self.vehicle = data.get('vehicle')
         self.label = data.get('label', '')
         self.x = data.get('x', 0)
         self.y = data.get('y', 0)
@@ -38,13 +40,14 @@ class ROIData:
         self.h = data.get('h', 0)
         self.start_time = data.get('start_time')
         self.end_time = data.get('end_time')
-        self.match_to_role = data.get('match_to_role', '')
+        self.measurement_unit = data.get('measurement_unit', '')
         self.points = data.get('points', {})
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         result = {
             'id': self.id,
+            'vehicle': self.vehicle,
             'label': self.label,
             'x': self.x,
             'y': self.y,
@@ -52,7 +55,7 @@ class ROIData:
             'h': self.h,
             'start_time': self.start_time,
             'end_time': self.end_time,
-            'match_to_role': self.match_to_role
+            'measurement_unit': self.measurement_unit
         }
         if self.points:
             result['points'] = self.points

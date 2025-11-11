@@ -14,7 +14,7 @@ Interactive PyQt6 GUI for creating and editing ROI (Region of Interest) configur
 
 - **Visual ROI Selection**: Click and drag to select rectangular regions on video frames
 - **ROI Management**: Add, edit, delete, and organize ROIs
-- **Properties Editor**: Configure ROI labels, match-to-role assignments, and coordinates
+- **Properties Editor**: Configure ROI labels, vehicle assignments, measurement units, and coordinates
 - **Config File Integration**: Load and save ROI configurations in JSON format
 
 ## Usage
@@ -55,9 +55,10 @@ The GUI works with JSON config files containing:
   "rois": [
     {
       "id": "SH_SPEED",
+      "vehicle": "superheavy",
       "label": "Superheavy Speed",
       "x": 359, "y": 913, "w": 83, "h": 25,
-      "match_to_role": "sh_speed"
+      "measurement_unit": "km/h"
     }
   ]
 }

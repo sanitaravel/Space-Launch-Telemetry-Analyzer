@@ -139,7 +139,8 @@ class ROIConfigurator(QMainWindow):
         """Update the ROI list widget."""
         self.roi_list.clear()
         for roi in self.config.rois:
-            item_text = f"{roi.id}: {roi.label} ({roi.match_to_role})"
+            vehicle = roi.vehicle if roi.vehicle else "global"
+            item_text = f"{roi.id}: {roi.label} ({vehicle})"
             item = QListWidgetItem(item_text)
             item.setData(Qt.ItemDataRole.UserRole, roi)
             self.roi_list.addItem(item)
@@ -155,7 +156,8 @@ class ROIConfigurator(QMainWindow):
         # Auto-generate ID
         roi.id = f"ROI_{len(self.config.rois) + 1}"
         roi.label = roi.id
-        roi.match_to_role = "custom"
+        roi.vehicle = None
+        roi.measurement_unit = ""
 
         self.config.rois.append(roi)
         self.update_roi_list()
