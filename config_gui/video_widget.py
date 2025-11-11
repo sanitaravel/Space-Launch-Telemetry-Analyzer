@@ -1,0 +1,157 @@
+"""
+Video widget for displaying video with ROI overlays.
+"""
+from PyQt6.QtOpenGLWidgets import QOpenGLWidget
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QImage
+import cv2
+import numpy as np
+
+from .models import ROIData
+
+
+class VideoWidget(QOpenGLWidget):
+    """Widget for displaying video with ROI overlays."""
+    roi_selected = pyqtSignal(ROIData)
+
+    def __init__(self):
+        super().__init__()
+        self.frame = None
+        self.rois = []
+        self.frame_idx = 0
+        self.fps = 30.0
+        self.time_unit = "frames"
+        self.scale = 1.0
+        self.display_scale = 1.0
+        self.offset_x = 0
+        self.offset_y = 0
+        self.is_selecting = False
+        self.start_pos = None
+
+    def set_frame(self, frame: np.ndarray):
+        self.frame = frame
+        self.update()
+
+    def set_rois(self, rois):
+        self.rois = rois
+
+    def is_active(self, roi, frame_idx: int) -> bool:
+        start = roi.get("start_time")
+        end = roi.get("end_time")
+        if start is None and end is None:
+            return True
+        # Convert to frame index if time_unit != "frames"
+        if self.time_unit == "frames":
+            s = start
+            e = end
+        elif self.time_unit in ("seconds", "s"):
+            s = None if start is None else int(start * self.fps)
+            e = None if end is None else int(end * self.fps)
+        else:
+            s = start
+            e = end
+        if s is None and e is None:
+            return True
+        if s is None:
+            return frame_idx <= e
+        if e is None:
+            return frame_idx >= s
+        return s <= frame_idx <= e
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        if self.frame is not None:
+            h, w, c = self.frame.shape
+            bytes_per_line = 3 * w
+            qimg = QImage(self.frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888).rgbSwapped()
+
+            # Calculate scaled rect to fit widget while maintaining aspect ratio
+            widget_w = self.width()
+            widget_h = self.height()
+            if w > 0 and h > 0:
+                aspect = w / h
+                if widget_w / widget_h > aspect:
+                    scaled_h = widget_h
+                    scaled_w = int(widget_h * aspect)
+                    x = (widget_w - scaled_w) // 2
+                    y = 0
+                else:
+                    scaled_w = widget_w
+                    scaled_h = int(widget_w / aspect)
+                    x = 0
+                    y = (widget_h - scaled_h) // 2
+                self.display_scale = scaled_w / w
+                self.offset_x = x
+                self.offset_y = y
+                scaled_qimg = qimg.scaled(scaled_w, scaled_h, Qt.AspectRatioMode.KeepAspectRatio)
+                painter.drawImage(x, y, scaled_qimg)
+            else:
+                painter.drawImage(0, 0, qimg)
+                self.display_scale = 1.0
+                self.offset_x = 0
+                self.offset_y = 0
+
+            # Draw ROIs scaled and offset
+            for roi in self.rois:
+                if self.is_active(roi, self.frame_idx):
+                    role = roi.get("id") or "default"
+                    color = (0, 255, 0)  # green for ROIs
+                    qcolor = QColor(*color)
+                    measurement_unit = roi.get("measurement_unit", "")
+                    vehicle = roi.get("vehicle")
+
+                    x_roi = int((roi.get("x", 0) * self.scale * self.display_scale) + self.offset_x)
+                    y_roi = int((roi.get("y", 0) * self.scale * self.display_scale) + self.offset_y)
+                    w_roi = int(roi.get("w", 0) * self.scale * self.display_scale)
+                    h_roi = int(roi.get("h", 0) * self.scale * self.display_scale)
+
+                    if w_roi > 0 and h_roi > 0:
+                        painter.setPen(QPen(qcolor, 2))
+                        painter.setBrush(QBrush(qcolor, Qt.BrushStyle.Dense4Pattern))
+                        painter.drawRect(x_roi, y_roi, w_roi, h_roi)
+
+                    # Draw label
+                    label = roi.get("label", roi.get("id", "ROI"))
+                    if vehicle:
+                        text = f"{label} ({vehicle}, {measurement_unit})"
+                    else:
+                        text = f"{label} ({role}, {measurement_unit})"
+                    painter.setPen(QPen(qcolor, 1))
+                    painter.drawText(max(8, x_roi), max(20, y_roi - 6), text)
+        painter.end()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.start_pos = event.pos()
+            self.is_selecting = True
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        # Could draw selection rectangle here
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.is_selecting:
+            self.is_selecting = False
+            end_pos = event.pos()
+            if self.start_pos and self.frame is not None:
+                # Convert screen coords to frame coords
+                h, w, c = self.frame.shape
+                start_x = (self.start_pos.x() - self.offset_x) / self.display_scale
+                start_y = (self.start_pos.y() - self.offset_y) / self.display_scale
+                end_x = (end_pos.x() - self.offset_x) / self.display_scale
+                end_y = (end_pos.y() - self.offset_y) / self.display_scale
+
+                x = min(start_x, end_x)
+                y = min(start_y, end_y)
+                w_roi = abs(end_x - start_x)
+                h_roi = abs(end_y - start_y)
+
+                if w_roi > 10 and h_roi > 10:
+                    roi_data = ROIData()
+                    roi_data.x = int(x)
+                    roi_data.y = int(y)
+                    roi_data.w = int(w_roi)
+                    roi_data.h = int(h_roi)
+                    self.roi_selected.emit(roi_data)
+        super().mouseReleaseEvent(event)
