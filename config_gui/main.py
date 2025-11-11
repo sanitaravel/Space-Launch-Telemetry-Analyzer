@@ -225,6 +225,7 @@ class ROIConfigurator(QMainWindow):
                 self.video_widget.set_frame(frame)
                 self.video_widget.frame_idx = 0
                 self.video_widget.fps = self.fps
+                self.video_widget.time_unit = self.config.time_unit
                 self.video_widget.set_rois([roi.__dict__ for roi in self.config.rois])
                 # Set slider
                 if self.total_frames > 0:
@@ -233,6 +234,7 @@ class ROIConfigurator(QMainWindow):
                     self.slider.setMaximum(0)
                 self.slider.setValue(0)
                 self.update_time_label()
+                self.properties_widget.set_current_frame_info(0, self.fps, self.config.time_unit)
                 self.status_bar.showMessage(f"Loaded video: {os.path.basename(video_path)}", 3000)
             else:
                 self.status_bar.showMessage("Failed to read first frame", 3000)
@@ -349,6 +351,7 @@ class ROIConfigurator(QMainWindow):
                 self.video_widget.frame_idx = value
                 self.video_widget.set_frame(frame)
                 self.update_time_label()
+                self.properties_widget.set_current_frame_info(self.frame_idx, self.fps, self.config.time_unit)
 
     def play_pause(self):
         if self.playing:
@@ -371,6 +374,7 @@ class ROIConfigurator(QMainWindow):
                 self.slider.setValue(self.frame_idx)
                 self.slider.blockSignals(False)
                 self.update_time_label()
+                self.properties_widget.set_current_frame_info(self.frame_idx, self.fps, self.config.time_unit)
             else:
                 self.timer.stop()
                 self.playing = False
@@ -388,6 +392,7 @@ class ROIConfigurator(QMainWindow):
                 self.slider.setValue(self.frame_idx)
                 self.slider.blockSignals(False)
                 self.update_time_label()
+                self.properties_widget.set_current_frame_info(self.frame_idx, self.fps, self.config.time_unit)
 
     def step_forward(self):
         """Step forward by one frame."""
@@ -406,6 +411,7 @@ class ROIConfigurator(QMainWindow):
                 self.slider.setValue(self.frame_idx)
                 self.slider.blockSignals(False)
                 self.update_time_label()
+                self.properties_widget.set_current_frame_info(self.frame_idx, self.fps, self.config.time_unit)
 
     def save_config(self):
         """Save config file."""

@@ -4,7 +4,7 @@ ROI properties widget for editing ROI properties.
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
     QFormLayout, QLineEdit, QComboBox, QSpinBox, QPushButton,
-    QGroupBox, QCheckBox
+    QGroupBox, QCheckBox, QDoubleSpinBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 
@@ -19,6 +19,9 @@ class ROIPropertiesWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.current_roi = None
+        self.current_frame_idx = 0
+        self.current_fps = 30.0
+        self.time_unit = "frames"
         self.setup_ui()
 
     def setup_ui(self):
@@ -46,6 +49,42 @@ class ROIPropertiesWidget(QWidget):
         basic_layout.addRow("Label:", self.label_edit)
         basic_layout.addRow("Vehicle:", self.vehicle_combo)
         basic_layout.addRow("Measurement Unit:", self.measurement_unit_edit)
+
+        # Start frame and time
+        start_frame_layout = QHBoxLayout()
+        self.start_frame_spin = QSpinBox()
+        self.start_frame_spin.setRange(0, 999999)
+        self.start_now_btn = QPushButton("Now")
+        start_frame_layout.addWidget(self.start_frame_spin)
+        start_frame_layout.addWidget(self.start_now_btn)
+        basic_layout.addRow("Start Frame:", start_frame_layout)
+
+        start_time_layout = QHBoxLayout()
+        self.start_time_spin = QDoubleSpinBox()
+        self.start_time_spin.setRange(0, 999999)
+        self.start_time_spin.setDecimals(2)
+        self.start_time_now_btn = QPushButton("Now")
+        start_time_layout.addWidget(self.start_time_spin)
+        start_time_layout.addWidget(self.start_time_now_btn)
+        basic_layout.addRow("Start Time (s):", start_time_layout)
+
+        # End frame and time
+        end_frame_layout = QHBoxLayout()
+        self.end_frame_spin = QSpinBox()
+        self.end_frame_spin.setRange(0, 999999)
+        self.end_now_btn = QPushButton("Now")
+        end_frame_layout.addWidget(self.end_frame_spin)
+        end_frame_layout.addWidget(self.end_now_btn)
+        basic_layout.addRow("End Frame:", end_frame_layout)
+
+        end_time_layout = QHBoxLayout()
+        self.end_time_spin = QDoubleSpinBox()
+        self.end_time_spin.setRange(0, 999999)
+        self.end_time_spin.setDecimals(2)
+        self.end_time_now_btn = QPushButton("Now")
+        end_time_layout.addWidget(self.end_time_spin)
+        end_time_layout.addWidget(self.end_time_now_btn)
+        basic_layout.addRow("End Time (s):", end_time_layout)
         basic_group.setLayout(basic_layout)
 
         # Geometry properties
@@ -141,12 +180,26 @@ class ROIPropertiesWidget(QWidget):
         self.apply_btn.clicked.connect(self.apply_changes)
         self.reset_btn.clicked.connect(self.reset_changes)
         self.id_edit.currentTextChanged.connect(self.on_id_changed)
+        self.start_frame_spin.valueChanged.connect(self.on_start_frame_changed)
+        self.start_time_spin.valueChanged.connect(self.on_start_time_changed)
+        self.end_frame_spin.valueChanged.connect(self.on_end_frame_changed)
+        self.end_time_spin.valueChanged.connect(self.on_end_time_changed)
+        self.start_now_btn.clicked.connect(self.on_start_now)
+        self.start_time_now_btn.clicked.connect(self.on_start_now)
+        self.end_now_btn.clicked.connect(self.on_end_now)
+        self.end_time_now_btn.clicked.connect(self.on_end_now)
 
     def on_vehicle_changed(self):
         """Handle vehicle combo editing finished to add new vehicles."""
         text = self.vehicle_combo.currentText()
         if text and text not in [self.vehicle_combo.itemText(i) for i in range(self.vehicle_combo.count())]:
             self.vehicle_combo.addItem(text)
+
+    def set_current_frame_info(self, frame_idx: int, fps: float, time_unit: str):
+        """Set current frame information for now buttons."""
+        self.current_frame_idx = frame_idx
+        self.current_fps = fps
+        self.time_unit = time_unit
 
     def set_roi(self, roi: ROIData):
         """Set current ROI for editing."""
@@ -156,6 +209,36 @@ class ROIPropertiesWidget(QWidget):
         vehicle = roi.vehicle if roi.vehicle else ''
         self.vehicle_combo.setCurrentText(vehicle)
         self.measurement_unit_edit.setText(roi.measurement_unit)
+
+        # Set start and end times
+        start_time = roi.start_time
+        end_time = roi.end_time
+
+        if start_time is not None:
+            if self.time_unit == "frames":
+                frame_val = start_time
+                time_val = start_time / self.current_fps if self.current_fps else 0
+            else:
+                time_val = start_time
+                frame_val = int(start_time * self.current_fps) if self.current_fps else 0
+            self.start_frame_spin.setValue(frame_val)
+            self.start_time_spin.setValue(time_val)
+        else:
+            self.start_frame_spin.setValue(0)
+            self.start_time_spin.setValue(0)
+
+        if end_time is not None:
+            if self.time_unit == "frames":
+                frame_val = end_time
+                time_val = end_time / self.current_fps if self.current_fps else 0
+            else:
+                time_val = end_time
+                frame_val = int(end_time * self.current_fps) if self.current_fps else 0
+            self.end_frame_spin.setValue(frame_val)
+            self.end_time_spin.setValue(time_val)
+        else:
+            self.end_frame_spin.setValue(0)
+            self.end_time_spin.setValue(0)
 
         if roi.id == "engines":
             self.rect_widget.hide()
@@ -188,6 +271,14 @@ class ROIPropertiesWidget(QWidget):
         vehicle_text = self.vehicle_combo.currentText()
         self.current_roi.vehicle = vehicle_text if vehicle_text else None
         self.current_roi.measurement_unit = self.measurement_unit_edit.text()
+
+        # Set start and end times
+        if self.time_unit == "frames":
+            self.current_roi.start_time = self.start_frame_spin.value()
+            self.current_roi.end_time = self.end_frame_spin.value()
+        else:
+            self.current_roi.start_time = self.start_time_spin.value()
+            self.current_roi.end_time = self.end_time_spin.value()
 
         if self.current_roi.id == "engines":
             # For engines, points are already managed in the points dict
@@ -290,9 +381,32 @@ class ROIPropertiesWidget(QWidget):
                     del self.current_roi.points[group_name][point_index]
                     self.load_points_for_group(group_name)
 
-    def load_points_for_group(self, group_name):
-        """Load points for the selected engine group."""
-        self.points_list.clear()
-        if self.current_roi and hasattr(self.current_roi, 'points') and group_name in self.current_roi.points:
-            for point in self.current_roi.points[group_name]:
-                self.points_list.addItem(f"({point[0]}, {point[1]})")
+    def on_start_frame_changed(self, value):
+        if self.current_fps:
+            self.start_time_spin.blockSignals(True)
+            self.start_time_spin.setValue(value / self.current_fps)
+            self.start_time_spin.blockSignals(False)
+
+    def on_start_time_changed(self, value):
+        if self.current_fps:
+            self.start_frame_spin.blockSignals(True)
+            self.start_frame_spin.setValue(int(value * self.current_fps))
+            self.start_frame_spin.blockSignals(False)
+
+    def on_end_frame_changed(self, value):
+        if self.current_fps:
+            self.end_time_spin.blockSignals(True)
+            self.end_time_spin.setValue(value / self.current_fps)
+            self.end_time_spin.blockSignals(False)
+
+    def on_end_time_changed(self, value):
+        if self.current_fps:
+            self.end_frame_spin.blockSignals(True)
+            self.end_frame_spin.setValue(int(value * self.current_fps))
+            self.end_frame_spin.blockSignals(False)
+
+    def on_start_now(self):
+        self.start_frame_spin.setValue(self.current_frame_idx)
+
+    def on_end_now(self):
+        self.end_frame_spin.setValue(self.current_frame_idx)
