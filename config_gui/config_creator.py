@@ -127,7 +127,7 @@ def get_launch_number():
         inquirer.Text(
             'launch_number',
             message="Enter launch number:",
-            validate=validate_number,
+            validate=lambda _, x: x.strip() != "" and validate_number(_, x),
         ),
     ]
 
@@ -175,7 +175,7 @@ def get_video_source():
 def create_basic_config_structure(provider, rocket, launch_number, video_type, webcast_url):
     """Create basic config structure with metadata."""
     config_data = {
-        "version": 1,
+        "version": 0,
         "video_source": {
             "type": video_type,
             "url": webcast_url

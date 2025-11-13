@@ -38,6 +38,13 @@ class ROIConfigurator(QMainWindow):
         if config_path:
             self.load_image_from_config()
 
+        # Update available vehicles in properties widget
+        used_vehicles = set()
+        for roi in self.config.rois:
+            if roi.vehicle is not None:
+                used_vehicles.add(roi.vehicle)
+        self.properties_widget.set_available_vehicles(list(used_vehicles))
+
     def setup_ui(self):
         """Setup the main UI."""
         self.setWindowTitle("ROI Configurator")
@@ -529,6 +536,13 @@ class ROIConfigurator(QMainWindow):
         self.current_roi = roi
         self.video_widget.set_current_roi(roi.__dict__)
 
+        # Update available vehicles in the properties widget
+        used_vehicles = set()
+        for r in self.config.rois:
+            if r.vehicle is not None:
+                used_vehicles.add(r.vehicle)
+        self.properties_widget.set_available_vehicles(list(used_vehicles))
+
     def on_new_roi_selected(self, roi):
         """Handle new ROI created by selection."""
         # Auto-generate ID
@@ -567,10 +581,24 @@ class ROIConfigurator(QMainWindow):
                 self.roi_list.setCurrentItem(item)
                 break
 
+        # Update available vehicles
+        used_vehicles = set()
+        for r in self.config.rois:
+            if r.vehicle is not None:
+                used_vehicles.add(r.vehicle)
+        self.properties_widget.set_available_vehicles(list(used_vehicles))
+
     def on_properties_changed(self, roi):
         """Handle ROI properties changes."""
         self.update_roi_list()
         self.video_widget.set_rois([r.__dict__ for r in self.config.rois])
+
+        # Update available vehicles in case a new vehicle was added
+        used_vehicles = set()
+        for r in self.config.rois:
+            if r.vehicle is not None:
+                used_vehicles.add(r.vehicle)
+        self.properties_widget.set_available_vehicles(list(used_vehicles))
 
     def on_point_added(self):
         """Handle point added to engine group."""
@@ -633,6 +661,13 @@ class ROIConfigurator(QMainWindow):
             self.update_title()
             self.update_roi_list()
             self.load_image_from_config()
+
+            # Update available vehicles
+            used_vehicles = set()
+            for roi in self.config.rois:
+                if roi.vehicle is not None:
+                    used_vehicles.add(roi.vehicle)
+            self.properties_widget.set_available_vehicles(list(used_vehicles))
 
     def update_time_label(self):
         time_sec = self.frame_idx / self.fps

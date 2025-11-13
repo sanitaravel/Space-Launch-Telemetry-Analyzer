@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "video_source": {
+    "type": "youtube",
+    "url": "https://www.youtube.com/watch?v=ecfxcTEl-1I"
+  },
+  "time_unit": "frames",
+  "vehicles": [
+    "new_glenn",
+    "second_stage"
+  ],
+  "rois": [
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time",
+      "x": 806,
+      "y": 966,
+      "w": 310,
+      "h": 73,
+      "start_time": 371523,
+      "end_time": 496698,
+      "measurement_unit": "[+-]\\\\d{2}:\\\\d{2}:\\\\d{2}"
+    },
+    {
+      "id": "speed",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Speed",
+      "x": 238,
+      "y": 979,
+      "w": 165,
+      "h": 48,
+      "start_time": 371523,
+      "end_time": 404701,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude (ascent)",
+      "x": 564,
+      "y": 979,
+      "w": 162,
+      "h": 48,
+      "start_time": 371523,
+      "end_time": 384580,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Second Stage Speed (ascent)",
+      "x": 237,
+      "y": 978,
+      "w": 162,
+      "h": 48,
+      "start_time": 371523,
+      "end_time": 382855,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Second Stage Altitude (ascent)",
+      "x": 563,
+      "y": 977,
+      "w": 161,
+      "h": 48,
+      "start_time": 371523,
+      "end_time": 382855,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Second Stage Speed (midflight)",
+      "x": 1239,
+      "y": 980,
+      "w": 165,
+      "h": 46,
+      "start_time": 382855,
+      "end_time": 435570,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Second Stage Altitude (midflight)",
+      "x": 1549,
+      "y": 980,
+      "w": 157,
+      "h": 46,
+      "start_time": 382855,
+      "end_time": 384535,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Second Stage Altitude (midflight, miles)",
+      "x": 1547,
+      "y": 982,
+      "w": 163,
+      "h": 42,
+      "start_time": 384570,
+      "end_time": 435570,
+      "measurement_unit": "mi"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude (midflight)",
+      "x": 563,
+      "y": 984,
+      "w": 163,
+      "h": 39,
+      "start_time": 384608,
+      "end_time": 394207,
+      "measurement_unit": "mi"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude (descent)",
+      "x": 559,
+      "y": 982,
+      "w": 165,
+      "h": 42,
+      "start_time": 394234,
+      "end_time": 404701,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Second Stage Speed (space)",
+      "x": 1243,
+      "y": 985,
+      "w": 161,
+      "h": 40,
+      "start_time": 449277,
+      "end_time": 496698,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Second Stage Altitude (space)",
+      "x": 1549,
+      "y": 984,
+      "w": 163,
+      "h": 40,
+      "start_time": 449277,
+      "end_time": 496698,
+      "measurement_unit": "mi"
+    }
+  ]
+}

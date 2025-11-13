@@ -189,6 +189,13 @@ class ROIPropertiesWidget(QWidget):
         self.end_now_btn.clicked.connect(self.on_end_now)
         self.end_time_now_btn.clicked.connect(self.on_end_now)
 
+    def set_available_vehicles(self, vehicles: list):
+        """Set the available vehicles in the combo box."""
+        self.vehicle_combo.clear()
+        self.vehicle_combo.addItem('')  # Empty option for no vehicle
+        for vehicle in sorted(vehicles):
+            self.vehicle_combo.addItem(vehicle)
+
     def on_vehicle_changed(self):
         """Handle vehicle combo editing finished to add new vehicles."""
         text = self.vehicle_combo.currentText()

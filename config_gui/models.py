@@ -75,7 +75,7 @@ class ROIConfig:
     """Handles ROI configuration file operations."""
     def __init__(self, config_path: Optional[str] = None):
         self.config_path = config_path
-        self.version = 6
+        self.version = 1
         self.video_source = {"type": "twitter/x", "url": ""}
         self.time_unit = "frames"
         self.vehicles = ["starship"]
@@ -90,7 +90,7 @@ class ROIConfig:
             with open(config_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
-            self.version = data.get('version', 6)
+            self.version = data.get('version', 1)
             self.video_source = data.get('video_source', {"type": "twitter/x", "url": ""})
             self.time_unit = data.get('time_unit', 'frames')
             self.vehicles = data.get('vehicles', ['starship'])
@@ -110,6 +110,13 @@ class ROIConfig:
             return False
 
         try:
+            # Update vehicles list based on vehicles used in ROIs
+            used_vehicles = set()
+            for roi in self.rois:
+                if roi.vehicle is not None:
+                    used_vehicles.add(roi.vehicle)
+            self.vehicles = sorted(list(used_vehicles))
+
             # Increment version if updating an existing file
             if os.path.exists(self.config_path):
                 self.version += 1
