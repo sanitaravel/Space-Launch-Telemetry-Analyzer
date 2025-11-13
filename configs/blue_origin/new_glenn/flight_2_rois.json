@@ -20,7 +20,7 @@
       "h": 73,
       "start_time": 371523,
       "end_time": 496698,
-      "measurement_unit": "[+-]\\\\d{2}:\\\\d{2}:\\\\d{2}"
+      "measurement_unit": "[+-]\\d{2}:\\d{2}:\\d{2}"
     },
     {
       "id": "speed",
