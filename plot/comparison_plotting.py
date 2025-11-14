@@ -214,6 +214,9 @@ def compare_multiple_launches(start_time: int, end_time: int, *json_paths: str, 
     
     logger.info(f"Creating comparison plots in folder {folder_name}")
 
+    # Ensure the folder exists
+    os.makedirs(folder_name, exist_ok=True)
+
     # Create all comparison plots defined in constants (skip for cross-company, already done above)
     if len(companies) <= 1:
         logger.info(f"Creating {len(PLOT_MULTIPLE_LAUNCHES_PARAMS)} comparison plots")
@@ -293,8 +296,9 @@ def compare_multiple_launches(start_time: int, end_time: int, *json_paths: str, 
                     
                     # Create a descriptive label
                     company_rocket = ' '.join(launch_label.split()[:2])  # "Blue Origin" or "Spacex Starship"
+                    launch_number = launch_label.split()[-1]  # Extract launch number
                     vehicle_display = vehicle_name.replace('_', ' ').title()
-                    data_label = f"{company_rocket} {vehicle_display}"
+                    data_label = f"{company_rocket} Launch {launch_number} {vehicle_display}"
                     
                     plot_data.append((df, col, data_label))
                     plot_labels.append(data_label)
@@ -399,8 +403,9 @@ def compare_multiple_launches(start_time: int, end_time: int, *json_paths: str, 
                         continue
                     
                     company_rocket = ' '.join(launch_label.split()[:2])
+                    launch_number = launch_label.split()[-1]  # Extract launch number
                     vehicle_display = vehicle_name.replace('_', ' ').title()
-                    data_label = f"{company_rocket} {vehicle_display}"
+                    data_label = f"{company_rocket} Launch {launch_number} {vehicle_display}"
                     
                     plot_data.append((df, col, data_label))
         
