@@ -20,11 +20,13 @@ Interactive PyQt6 GUI for creating and editing ROI (Region of Interest) configur
 ## Usage
 
 ### From CLI Menu
+
 1. Run the main application
 2. Select "Config GUI" > "Launch Interactive ROI Configurator (GUI)"
 3. The GUI will open
 
 ### Direct Launch
+
 ```bash
 python config_gui/main.py [optional_config_file]
 ```
@@ -46,6 +48,7 @@ python config_gui/main.py [optional_config_file]
 ## File Format
 
 The GUI works with JSON config files containing:
+
 ```json
 {
   "version": 6,
@@ -70,8 +73,6 @@ The GUI works with JSON config files containing:
 - ✅ ROI list and properties editor
 - ✅ Config file loading/saving
 - ✅ Interactive rectangle selection
-- 🔄 Video frame extraction (placeholder)
-- 🔄 Polygon ROI editing (basic structure)
 
 ## Dependencies
 
