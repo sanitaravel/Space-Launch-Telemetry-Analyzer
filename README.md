@@ -17,6 +17,7 @@ This repository contains video-processing utilities, OCR-based telemetry extract
 - `download/` — video download utilities supporting multiple platforms (Twitter/X broadcasts and YouTube) with automatic organization by company and vehicle.
 - `ocr/` — OCR helpers and models integration.
 - `configs/` — ROI and configuration JSON files, organized by company and vehicle (e.g., `configs/spacex/starship/`, with `default_rois.json` at the root).
+- `config_gui/` — Interactive PyQt6 GUI for creating and editing ROI configurations visually.
 - `flight_recordings/` — sample and raw MP4 recordings used for analysis, organized by company and vehicle (e.g., `flight_recordings/spacex/starship/`, `flight_recordings/blue_origin/new_glenn/`).
 - `plot/`, `results/` — output directories for plots and results, organized by company and vehicle (e.g., `results/spacex/starship/`, `results/blue_origin/new_glenn/`). Also includes comparison results across launches.
 - `logs/` — runtime log files created when running the tools.
@@ -100,6 +101,7 @@ Region-of-interest (ROI) and flight-specific settings live in `configs/`. The fi
 Pre-configured ROI files are available for specific flights:
 
 - **SpaceX Starship**:
+  - Flight 1: `configs/spacex/starship/flight_1_rois.json`
   - Flight 6: `configs/spacex/starship/flight_6_rois.json`
   - Flight 7: `configs/spacex/starship/flight_7_rois.json`
   - Flight 8: `configs/spacex/starship/flight_8_rois.json`
@@ -109,6 +111,30 @@ Pre-configured ROI files are available for specific flights:
 
 - **Blue Origin New Glenn**:
   - Flight 1: `configs/blue_origin/new_glenn/flight_1_rois.json`
+  - Flight 2: `configs/blue_origin/new_glenn/flight_2_rois.json`
+
+## Creating ROIs with the GUI
+
+The `config_gui/` directory contains an interactive PyQt6-based GUI for creating and editing ROI configurations visually.
+
+To launch the GUI:
+
+1. Run `python main.py` and select "Config GUI" > "Launch Interactive ROI Configurator (GUI)"
+
+Or directly:
+
+```bash
+python config_gui/main.py [optional_config_file]
+```
+
+The GUI allows you to:
+
+- Visually select rectangular regions on video frames by clicking and dragging.
+- Manage ROIs: add, edit, delete, and organize them.
+- Edit properties: labels, vehicle assignments, measurement units, coordinates.
+- Load and save ROI configurations in JSON format.
+
+For more details, see `config_gui/README.md`.
 
 Example ROI configuration (JSON) matching the project's schema:
 
@@ -218,17 +244,14 @@ Per-ROI object fields
 
 Notes and best practices
 
+- **Use the GUI for ROI creation**: For new users or complex configurations, use the interactive GUI in `config_gui/` to visually select and configure ROIs instead of manually editing JSON files. This reduces errors and speeds up setup.
 - Coordinates and sizes are integer pixel values — double-check these values at the video resolution you are analyzing (e.g., 1920x1080 vs 1280x720).
 - Use `start_time`/`end_time` to avoid running OCR on regions that are not present for the whole recording (this speeds up processing).
 - Keep `id` values unique within a single file. You may reuse `id` values across ROIs if they apply to different vehicles or time ranges.
 - When converting `seconds` to `frames`, multiply seconds by the video's frames-per-second (FPS). The project does not assume a default FPS — supply `time_unit` and values consistent with your workflow.
-- `time_unit` indicates the unit used for `start_time`/`end_time` (e.g., `frames` or `seconds`).
-- Coordinates are in pixels (`x`, `y`, `w`, `h`) relative to the top-left of the frame.
-- `start_time` and `end_time` define when the ROI is active in the recording.
-- `measurement_unit` specifies the expected format or unit of the extracted data (e.g., units like "km/h" or regex patterns for time).
-- For engine detection, use the `points` field to define key coordinates for flame analysis.
 - Save custom configs into the appropriate `configs/{company}/{vehicle}/` subdirectory and name them clearly (e.g., `configs/spacex/starship/flight_9_rois.json`).
 - The analyzer will read the selected JSON and apply OCR or detection routines to each ROI; check logs in `logs/` for ROI processing messages.
+- Test ROI configurations on a small video segment first to verify accuracy before running full analyses.
 
 ## Contributing
 
