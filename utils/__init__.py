@@ -74,6 +74,21 @@ def display_image(image: np.ndarray, text: str) -> None:
         # this will raise an error from OpenCV; catch and log a warning and
         # continue without raising so callers can remain headless-friendly.
         cv2.imshow(text, image)
+        
+        # Try to bring window to front (Windows-specific)
+        try:
+            cv2.setWindowProperty(text, cv2.WND_PROP_TOPMOST, 1)
+        except:
+            pass  # Ignore if not supported
+        
+        # Resize window if image is very small
+        height, width = image.shape[:2]
+        if width < 200 or height < 200:
+            cv2.resizeWindow(text, max(width, 400), max(height, 300))
+        
+        print(f"\nDisplaying ROI: {text}")
+        print("Press any key in the image window to continue...")
+        
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     except cv2.error as e:
@@ -94,10 +109,48 @@ def extract_launch_number(json_path: str) -> str:
     """
     return os.path.basename(os.path.dirname(json_path)).split('_')[-1]
 
+
+def extract_launch_info(json_path: str) -> dict:
+    """
+    Extract company, rocket, and launch number from a JSON file path.
+    
+    Args:
+        json_path (str): Path to the JSON file
+        
+    Returns:
+        dict: Dictionary with 'company', 'rocket', and 'launch_number' keys
+    """
+    # Normalize path separators
+    path = os.path.normpath(json_path)
+    parts = path.split(os.sep)
+    
+    # Find the results directory and extract subsequent parts
+    try:
+        results_idx = parts.index('results')
+        company = parts[results_idx + 1]
+        rocket = parts[results_idx + 2]
+        launch_dir = parts[results_idx + 3]
+        launch_number = launch_dir.split('_')[-1]
+        
+        return {
+            'company': company,
+            'rocket': rocket,
+            'launch_number': launch_number
+        }
+    except (IndexError, ValueError):
+        # Fallback to old method if path structure doesn't match
+        launch_number = os.path.basename(os.path.dirname(json_path)).split('_')[-1]
+        return {
+            'company': 'unknown',
+            'rocket': 'unknown',
+            'launch_number': launch_number
+        }
+
 __all__ = [
     # Functions defined in this file
     'display_image',
     'extract_launch_number',
+    'extract_launch_info',
     
     # Logger functions
     'get_logger',

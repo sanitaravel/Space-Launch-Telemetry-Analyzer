@@ -44,15 +44,16 @@ def validate_positive_number(_, current):
     except ValueError:
         raise errors.ValidationError('', reason='Please enter a valid positive number')
 
-def validate_url(url):
+def validate_url(_, current):
     """
     Validates that a URL is from a supported platform (YouTube or Twitter/X).
     
     Args:
-        url (str): The URL to validate
+        _: Unused parameter (required by inquirer)
+        current: The current input value
         
     Returns:
-        bool or str: True if valid, error message if invalid
+        bool: True if valid, otherwise raises ValidationError
     """
     import re
     
@@ -62,7 +63,7 @@ def validate_url(url):
     # Twitter/X pattern: https://x.com/* or https://twitter.com/*
     twitter_pattern = r'^https?://(www\.)?(x\.com|twitter\.com)/.+'
     
-    if re.match(youtube_pattern, url) or re.match(twitter_pattern, url):
+    if re.match(youtube_pattern, current) or re.match(twitter_pattern, current):
         return True
     else:
-        return "Please enter a valid YouTube or Twitter/X URL"
+        raise errors.ValidationError('', reason='Please enter a valid YouTube or Twitter/X URL')

@@ -102,27 +102,138 @@ def process_random_frame():
         end_frame = -1 if end_time == -1 else int(end_time * fps)
 
     logger.debug(f"Processing random frame from {answers['video_path']} with start_frame={start_frame}, end_frame={end_frame}")
-    process_video_frame(
+    result = process_video_frame(
         answers['video_path'], answers['display_rois'], answers['debug'] or DEBUG_MODE, start_frame, end_frame)
+    
+    # Display results
+    if result:
+        if 'error' in result:
+            print(f"Error processing frame: {result['error']}")
+        else:
+            print(f"Processed frame {result.get('frame_number', 'unknown')}")
+            vehicles = result.get('vehicles', {})
+            time_data = result.get('time', {})
+            
+            if vehicles:
+                for vehicle, data in vehicles.items():
+                    speed = data.get('speed')
+                    altitude = data.get('altitude')
+                    fuel = data.get('fuel', {})
+                    engines = data.get('engines', {})
+                    
+                    print(f"  {vehicle.title()}:")
+                    if speed is not None:
+                        print(f"    Speed: {speed}")
+                    if altitude is not None:
+                        print(f"    Altitude: {altitude}")
+                    if fuel:
+                        lox = fuel.get('lox', {}).get('fullness')
+                        ch4 = fuel.get('ch4', {}).get('fullness')
+                        if lox is not None or ch4 is not None:
+                            print(f"    Fuel: LOX {lox}%, CH4 {ch4}%")
+                    if engines:
+                        print(f"    Engines: {engines}")
+            
+            if time_data:
+                sign = time_data.get('sign', '')
+                h = time_data.get('hours', 0)
+                m = time_data.get('minutes', 0)
+                s = time_data.get('seconds', 0)
+                print(f"  Time: {sign}{h:02}:{m:02}:{s:02}")
+            
+            if answers['display_rois']:
+                # Check if any ROIs were active
+                from ocr.roi_manager import get_default_manager
+                manager = get_default_manager()
+                active_rois = manager.get_active_rois(result.get('frame_number'))
+                if not active_rois:
+                    print("  Note: No ROIs were active at this frame. Try selecting a different time range or ROI config.")
+                else:
+                    print(f"  Displayed {len(active_rois)} active ROIs")
+    else:
+        print("No results returned from frame processing")
+    
     input("\nPress Enter to continue...")
     clear_screen()
     return True
 
+def get_launch_providers():
+    """Get list of available launch providers."""
+    flight_recordings_folder = Path('flight_recordings')
+    if not flight_recordings_folder.exists():
+        return []
+    return [d.name for d in flight_recordings_folder.iterdir() if d.is_dir()]
+
+def get_rockets(provider):
+    """Get list of available rockets for a provider."""
+    provider_path = Path('flight_recordings') / provider
+    if not provider_path.exists():
+        return []
+    return [d.name for d in provider_path.iterdir() if d.is_dir()]
+
+def get_flights(provider, rocket):
+    """Get list of available flights (video files) for a provider and rocket."""
+    rocket_path = Path('flight_recordings') / provider / rocket
+    if not rocket_path.exists():
+        return []
+    video_files = []
+    for file in rocket_path.iterdir():
+        if file.is_file() and file.suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']:
+            video_files.append((file.name, str(file.relative_to('.'))))
+    return video_files
+
 def select_video_file():
     """Select a video file from available flight recordings."""
-    video_files = get_video_files_from_flight_recordings()
-    if not video_files:
+    providers = get_launch_providers()
+    if not providers:
+        print("No launch providers found.")
         return None
     
-    video_question = [
+    provider_question = [
         inquirer.List(
-            'video_path',
-            message="Select a video file",
-            choices=video_files,
+            'provider',
+            message="Select a launch provider",
+            choices=providers,
         )
     ]
-    video_answer = inquirer.prompt(video_question)
-    return video_answer['video_path']
+    provider_answer = inquirer.prompt(provider_question)
+    provider = provider_answer['provider']
+    
+    rockets = get_rockets(provider)
+    if not rockets:
+        print(f"No rockets found for provider {provider}.")
+        return None
+    
+    rocket_question = [
+        inquirer.List(
+            'rocket',
+            message="Select a rocket",
+            choices=rockets,
+        )
+    ]
+    rocket_answer = inquirer.prompt(rocket_question)
+    rocket = rocket_answer['rocket']
+    
+    flights = get_flights(provider, rocket)
+    if not flights:
+        print(f"No flights found for {provider}/{rocket}.")
+        return None
+    
+    flight_question = [
+        inquirer.List(
+            'flight',
+            message="Select a flight",
+            choices=[name for name, path in flights],
+        )
+    ]
+    flight_answer = inquirer.prompt(flight_question)
+    selected_name = flight_answer['flight']
+    
+    for name, path in flights:
+        if name == selected_name:
+            return path
+    
+    return None
 
 def get_processing_parameters():
     """Get processing parameters from user."""
@@ -194,6 +305,16 @@ def process_video_with_parameters(video_path, launch_number, batch_size, sample_
     """Compatibility wrapper: convert time borders to frames and call iterate_through_frames."""
     from main import DEBUG_MODE  # Import here to avoid circular imports
 
+    # Parse provider and vehicle_type from video_path
+    path_parts = Path(video_path).parts
+    if len(path_parts) >= 3 and path_parts[0] == 'flight_recordings':
+        provider = path_parts[1]
+        vehicle_type = path_parts[2]
+    else:
+        # Fallback to defaults if path structure is unexpected
+        provider = "spacex"
+        vehicle_type = "starship"
+
     logger.debug(f"Processing complete video {video_path} with launch_number={launch_number}, "
                 f"batch_size={batch_size}, sample_rate={sample_rate}")
     logger.debug(f"Borders: start_time={start_time}, end_time={end_time}, "
@@ -215,7 +336,7 @@ def process_video_with_parameters(video_path, launch_number, batch_size, sample_
             converted_end_frame = int(end_time * fps)
 
     iterate_through_frames(
-        video_path, int(launch_number), debug=DEBUG_MODE, 
+        video_path, provider, vehicle_type, int(launch_number), debug=DEBUG_MODE, 
         batch_size=batch_size, sample_rate=sample_rate,
         start_frame=converted_start_frame, end_frame=converted_end_frame)
 
@@ -227,6 +348,16 @@ def process_complete_video():
     video_path = select_video_file()
     if not video_path:
         return True
+    
+    # Parse provider and vehicle_type from video_path
+    path_parts = Path(video_path).parts
+    if len(path_parts) >= 3 and path_parts[0] == 'flight_recordings':
+        provider = path_parts[1]
+        vehicle_type = path_parts[2]
+    else:
+        # Fallback to defaults if path structure is unexpected
+        provider = "spacex"
+        vehicle_type = "starship"
     
     logger.debug("Starting complete video processing")
     
@@ -316,7 +447,7 @@ def process_complete_video():
 
     logger.info(f"Using frames: {converted_start_frame} - {converted_end_frame}")
     iterate_through_frames(
-        video_path, int(answers['launch_number']), debug=DEBUG_MODE,
+        video_path, provider, vehicle_type, int(answers['launch_number']), debug=DEBUG_MODE,
         batch_size=batch_size, sample_rate=sample_rate,
         start_frame=converted_start_frame, end_frame=converted_end_frame
     )
@@ -326,31 +457,117 @@ def process_complete_video():
     return True
 
 
+def get_config_providers():
+    """Get list of available config providers."""
+    configs_dir = Path('configs')
+    if not configs_dir.exists():
+        return []
+    providers = [d.name for d in configs_dir.iterdir() if d.is_dir()]
+    # Check if there are root .json
+    root_jsons = list(configs_dir.glob('*.json'))
+    if root_jsons:
+        providers.insert(0, 'Root configs')
+    return providers
+
+def get_config_rockets(provider):
+    """Get list of available rockets for a config provider."""
+    if provider == 'Root configs':
+        return []
+    provider_path = Path('configs') / provider
+    if not provider_path.exists():
+        return []
+    return [d.name for d in provider_path.iterdir() if d.is_dir()]
+
+def get_config_files(provider, rocket=None):
+    """Get list of available config files for a provider and optional rocket."""
+    if provider == 'Root configs':
+        configs_dir = Path('configs')
+        return sorted([p.name for p in configs_dir.glob('*.json')])
+    else:
+        if rocket:
+            path = Path('configs') / provider / rocket
+        else:
+            path = Path('configs') / provider
+        if not path.exists():
+            return []
+        return sorted([p.name for p in path.glob('*.json')])
+
 def select_roi_config_menu():
     """Prompt the user to choose an ROI config from the `configs` folder and set it as default.
 
     If the user cancels or no configs are found, nothing changes.
     """
     try:
-        configs_dir = Path('configs')
-        if not configs_dir.exists():
+        providers = get_config_providers()
+        if not providers:
+            print("No config providers found.")
             return None
-
-        json_files = sorted([p.name for p in configs_dir.glob('*.json')])
-        if not json_files:
-            return None
-
-        choices = json_files + ['Use current/default']
-        question = [
-            inquirer.List('config', message='Select ROI config (affects subsequent processing):', choices=choices)
+        
+        choices = providers + ['Use current/default']
+        provider_question = [
+            inquirer.List('provider', message='Select ROI config provider (affects subsequent processing):', choices=choices)
         ]
-        ans = inquirer.prompt(question)
-        if not ans:
+        ans = inquirer.prompt(provider_question)
+        if not ans or ans['provider'] == 'Use current/default':
             return None
-        if ans['config'] == 'Use current/default':
-            return None
-
-        selected = configs_dir / ans['config']
+        
+        provider = ans['provider']
+        
+        if provider == 'Root configs':
+            configs = get_config_files(provider)
+            if not configs:
+                print("No configs found in root.")
+                return None
+            config_question = [
+                inquirer.List(
+                    'config',
+                    message="Select a config",
+                    choices=configs,
+                )
+            ]
+            config_answer = inquirer.prompt(config_question)
+            selected = Path('configs') / config_answer['config']
+        else:
+            rockets = get_config_rockets(provider)
+            if rockets:
+                rocket_question = [
+                    inquirer.List(
+                        'rocket',
+                        message="Select a rocket",
+                        choices=rockets,
+                    )
+                ]
+                rocket_answer = inquirer.prompt(rocket_question)
+                rocket = rocket_answer['rocket']
+                configs = get_config_files(provider, rocket)
+                if not configs:
+                    print(f"No configs found for {provider}/{rocket}.")
+                    return None
+                config_question = [
+                    inquirer.List(
+                        'config',
+                        message="Select a config",
+                        choices=configs,
+                    )
+                ]
+                config_answer = inquirer.prompt(config_question)
+                selected = Path('configs') / provider / rocket / config_answer['config']
+            else:
+                # No rockets, check for configs directly in provider
+                configs = get_config_files(provider)
+                if not configs:
+                    print(f"No configs found for {provider}.")
+                    return None
+                config_question = [
+                    inquirer.List(
+                        'config',
+                        message="Select a config",
+                        choices=configs,
+                    )
+                ]
+                config_answer = inquirer.prompt(config_question)
+                selected = Path('configs') / provider / config_answer['config']
+        
         # Set global default manager to use this config
         set_default_manager_config(str(selected))
         return str(selected)

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, Any
 from utils import display_image
 from .ocr import extract_values_from_roi
 from .engine_detection import detect_engine_status
@@ -7,6 +7,7 @@ from .fuel_level_extraction import extract_fuel_levels
 from utils.logger import get_logger
 from .roi_manager import get_default_manager, ROIManager
 import traceback  # Import at the top level instead of in exception handler
+from utils.measurement_converter import convert_measurement
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -14,8 +15,22 @@ logger = get_logger(__name__)
 # This module is now fully config-driven. ROI coordinates and activation windows
 # are provided by `ocr.roi_manager.ROIManager` via `get_default_manager()`.
 
+def slice_roi(img, y, h, x, w):
+    """Helper function to safely slice an ROI from an image."""
+    ih, iw = img.shape[0], img.shape[1]
+    y0 = max(0, int(y))
+    x0 = max(0, int(x))
+    y1 = min(ih, int(y + h))
+    x1 = min(iw, int(x + w))
+    if y0 >= y1 or x0 >= x1:
+        return None
+    return img[y0:y1, x0:x1]
+
 def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager: Optional[ROIManager] = None, frame_idx: Optional[int] = None) -> Dict[str, Optional[np.ndarray]]:
     """
+    DEPRECATED: This function is deprecated and will be removed in a future version.
+    ROI preprocessing is now handled directly in extract_data().
+    
     Preprocess the image to extract ROIs for Superheavy Speed, Superheavy Altitude, Starship Speed, Starship Altitude, and Time.
 
     Args:
@@ -25,9 +40,10 @@ def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager:
     Returns:
         tuple: A tuple containing the ROIs for Superheavy Speed, Superheavy Altitude, Starship Speed, Starship Altitude, and Time.
     """
-    # Helper: single empty ROI -> return None so OCR can early-exit
-    def empty_roi():
-        return None
+    import warnings
+    warnings.warn("preprocess_image() is deprecated and will be removed in a future version. "
+                  "ROI preprocessing is now handled directly in extract_data().", 
+                  DeprecationWarning, stacklevel=2)
 
     # Input validation
     if image is None:
@@ -49,17 +65,6 @@ def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager:
         return {}
     
     try:
-        # Helper: safe slice function
-        def slice_roi(img, y, h, x, w):
-            ih, iw = img.shape[0], img.shape[1]
-            y0 = max(0, int(y))
-            x0 = max(0, int(x))
-            y1 = min(ih, int(y + h))
-            x1 = min(iw, int(x + w))
-            if y0 >= y1 or x0 >= x1:
-                return None
-            return img[y0:y1, x0:x1]
-
         # Build mapping roi_id -> cropped image for all active ROIs
         rois_map: Dict[str, Optional[np.ndarray]] = {}
         active = use_manager.get_active_rois(frame_idx)
@@ -74,15 +79,12 @@ def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager:
         # Debug logging
         if display_rois:
             logger.debug("Displaying ROI slices for visual inspection")
-            for rid, img in rois_map.items():
-                title = rid
-                try:
-                    roi_obj = next((r for r in active if r.id == rid), None)
-                    if roi_obj and roi_obj.match_to_role:
-                        title = f"{rid} ({roi_obj.match_to_role})"
-                except Exception:
-                    pass
-                display_image(img, title)
+            for roi in active:
+                title = roi.id
+                if roi.label:
+                    title = f"{roi.id} ({roi.label})"
+                roi_img = slice_roi(image, roi.y, roi.h, roi.x, roi.w)
+                display_image(roi_img, title)
 
         return rois_map
     
@@ -92,107 +94,7 @@ def preprocess_image(image: np.ndarray, display_rois: bool = False, roi_manager:
         return {}
 
 
-def extract_superheavy_data(sh_speed_roi: np.ndarray, sh_altitude_roi: np.ndarray, display_rois: bool, debug: bool) -> Dict:
-    """
-    Extract data for Superheavy from the ROIs.
-
-    Args:
-        sh_speed_roi (numpy.ndarray): The ROI for Superheavy speed.
-        sh_altitude_roi (numpy.ndarray): The ROI for Superheavy altitude.
-        display_rois (bool): Whether to display the ROIs.
-        debug (bool): Whether to enable debug prints.
-
-    Returns:
-        dict: A dictionary containing the extracted data for Superheavy.
-    """
-    if debug:
-        logger.debug("Extracting Superheavy data from ROIs")
-    
-    try:
-        # Extract values from ROIs
-        speed_data = extract_values_from_roi(sh_speed_roi, mode="speed", 
-                                            display_transformed=display_rois, debug=debug)
-        altitude_data = extract_values_from_roi(sh_altitude_roi, mode="altitude", 
-                                               display_transformed=display_rois, debug=debug)
-        
-        # Store values directly to avoid repeated dictionary lookups
-        speed_value = speed_data.get("value")
-        altitude_value = altitude_data.get("value")
-        
-        # Debug logging
-        if debug:
-            missing = []
-            if speed_value is None:
-                missing.append("speed")
-            if altitude_value is None:
-                missing.append("altitude")
-                
-            logger.debug(f"Extracted Superheavy speed: {speed_value}, altitude: {altitude_value}")
-            
-            if missing:
-                logger.debug(f"Missing Superheavy data: {', '.join(missing)}")
-        
-        # Return extracted data
-        return {"speed": speed_value, "altitude": altitude_value}
-    
-    except Exception as e:
-        logger.error(f"Error extracting Superheavy data: {str(e)}")
-        if debug:
-            logger.debug(traceback.format_exc())
-        return {"speed": None, "altitude": None}
-
-
-def extract_starship_data(ss_speed_roi: np.ndarray, ss_altitude_roi: np.ndarray, display_rois: bool, debug: bool) -> Dict:
-    """
-    Extract data for Starship from the ROIs.
-
-    Args:
-        ss_speed_roi (numpy.ndarray): The ROI for Starship speed.
-        ss_altitude_roi (numpy.ndarray): The ROI for Starship altitude.
-        display_rois (bool): Whether to display the ROIs.
-        debug (bool): Whether to enable debug prints.
-
-    Returns:
-        dict: A dictionary containing the extracted data for Starship.
-    """
-    if debug:
-        logger.debug("Extracting Starship data from ROIs")
-    
-    try:
-        # Extract values from ROIs
-        speed_data = extract_values_from_roi(ss_speed_roi, mode="speed", 
-                                           display_transformed=display_rois, debug=debug)
-        altitude_data = extract_values_from_roi(ss_altitude_roi, mode="altitude", 
-                                              display_transformed=display_rois, debug=debug)
-        
-        # Store values directly to avoid repeated dictionary lookups
-        speed_value = speed_data.get("value")
-        altitude_value = altitude_data.get("value")
-        
-        # Debug logging
-        if debug:
-            missing = []
-            if speed_value is None:
-                missing.append("speed")
-            if altitude_value is None:
-                missing.append("altitude")
-                
-            logger.debug(f"Extracted Starship speed: {speed_value}, altitude: {altitude_value}")
-            
-            if missing:
-                logger.debug(f"Missing Starship data: {', '.join(missing)}")
-        
-        # Return extracted data
-        return {"speed": speed_value, "altitude": altitude_value}
-    
-    except Exception as e:
-        logger.error(f"Error extracting Starship data: {str(e)}")
-        if debug:
-            logger.debug(traceback.format_exc())
-        return {"speed": None, "altitude": None}
-
-
-def extract_time_data(time_roi: np.ndarray, display_rois: bool, debug: bool, zero_time_met: bool) -> Dict:
+def extract_time_data(time_roi: np.ndarray, display_rois: bool, debug: bool, zero_time_met: bool, regex: str = r'[+-]\d{2}:\d{2}:\d{2}') -> Dict:
     """
     Extract time data from the ROI.
 
@@ -213,7 +115,7 @@ def extract_time_data(time_roi: np.ndarray, display_rois: bool, debug: bool, zer
         return {"sign": "+", "hours": 0, "minutes": 0, "seconds": 0}
     
     try:
-        time_data = extract_values_from_roi(time_roi, mode="time", display_transformed=display_rois, debug=debug)
+        time_data = extract_values_from_roi(time_roi, mode="time", display_transformed=display_rois, debug=debug, regex=regex)
         
         if debug:
             if time_data:
@@ -233,188 +135,70 @@ def extract_time_data(time_roi: np.ndarray, display_rois: bool, debug: bool, zer
         return {}
 
 
-def extract_data(image: np.ndarray, display_rois: bool = False, debug: bool = False, zero_time_met: bool = False, roi_manager: Optional[ROIManager] = None, frame_idx: Optional[int] = None) -> Tuple[Dict, Dict, Dict]:
+def extract_data(image: np.ndarray, display_rois: bool = False, debug: bool = False, zero_time_met: bool = False, roi_manager: Optional[ROIManager] = None, frame_idx: Optional[int] = None) -> Dict[str, any]:
     """
-    Extract data from an image.
-
-    Args:
-        image (numpy.ndarray): The image to process.
-        display_rois (bool): Whether to display the ROIs.
-        debug (bool): Whether to enable debug prints.
-        zero_time_met (bool): Whether a frame with time 0:0:0 has been met.
-
-    Returns:
-        tuple: A tuple containing the extracted data for Superheavy, Starship, and Time.
+    Extract data from an image, returning {'vehicles': {...}, 'time': {...}}.
     """
     if debug:
         logger.debug("Starting data extraction from image")
-    
-    # Preprocess the image to get ROIs mapping (roi_id -> image)
-    rois_map = preprocess_image(image, display_rois, roi_manager=roi_manager, frame_idx=frame_idx)
 
-    # Determine which types of processing are configured via ROIs.
-    mgr = roi_manager
-    if mgr is None:
-        try:
-            mgr = get_default_manager()
-        except Exception:
-            mgr = None
+    mgr = roi_manager or get_default_manager()
+    vehicles_data = {}
+    time_data = {}
 
-    active_roles = set()
-    if mgr is not None:
-        try:
-            for r in mgr.get_active_rois(frame_idx):
-                if getattr(r, "match_to_role", None):
-                    active_roles.add(r.match_to_role)
-        except Exception:
-            # Be conservative: if we fail to query manager, assume only time/speed/alt present
-            active_roles = set()
+    # Initialize vehicles from config
+    for vehicle in mgr.vehicles:
+        vehicles_data[vehicle] = {"speed": None, "altitude": None, "fuel": {"lox": {"fullness": 0}, "ch4": {"fullness": 0}}, "engines": {}}
 
-    has_fuel_roi = any(("fuel" in (r or "").lower()) for r in active_roles)
-    has_engine_roi = any(("engine" in (r or "").lower()) for r in active_roles)
+    # Get active ROIs and process
+    active_rois = mgr.get_active_rois(frame_idx)
+    fuel_extracted = False
+    for roi in active_rois:
+        # Slice the ROI image directly
+        roi_img = slice_roi(image, roi.y, roi.h, roi.x, roi.w)
+        if roi_img is None:
+            continue
 
-    # Helper to fetch ROI image by role using roi_manager mapping; return empty ROI when missing
-    def _get_roi_image(role: str) -> Optional[np.ndarray]:
-        mgr = roi_manager
-        if mgr is None:
-            try:
-                mgr = get_default_manager()
-            except Exception:
-                mgr = None
+        if roi.id == "time":
+            time_data = extract_time_data(roi_img, display_rois, debug, zero_time_met, roi.measurement_unit)
+        elif roi.vehicle:
+            vehicle = roi.vehicle
+            if roi.id == "speed":
+                data = extract_values_from_roi(roi_img, mode="speed", display_transformed=display_rois, debug=debug)
+                value = data.get("value")
+                if value is not None and roi.measurement_unit != "km/h":
+                    value = convert_measurement(value, "speed", roi.measurement_unit)
+                vehicles_data[vehicle]["speed"] = value
+            elif roi.id == "altitude":
+                data = extract_values_from_roi(roi_img, mode="altitude", display_transformed=display_rois, debug=debug)
+                value = data.get("value")
+                if value is not None and roi.measurement_unit != "km":
+                    value = convert_measurement(value, "altitude", roi.measurement_unit)
+                vehicles_data[vehicle]["altitude"] = value
+            elif roi.id == "engines":
+                # Engine detection using roi.points
+                engines = detect_engine_status(roi.points, image) if roi.points else {}
+                vehicles_data[vehicle]["engines"] = engines
+            elif roi.id == "fuel" and not fuel_extracted:
+                # Extract fuel levels only once when encountering a fuel ROI
+                try:
+                    fuel_data = extract_fuel_levels(image, debug)
+                    for vehicle in mgr.vehicles:
+                        vehicles_data[vehicle]["fuel"] = fuel_data.get(vehicle, {"lox": {"fullness": 0}, "ch4": {"fullness": 0}})
+                    fuel_extracted = True
+                    logger.debug("Fuel levels extracted for active fuel ROI")
+                except Exception as e:
+                    logger.error(f"Error extracting fuel levels: {str(e)}")
+                    if debug:
+                        logger.debug(traceback.format_exc())
 
-        roi_obj = None
-        if mgr is not None:
-            try:
-                roi_obj = mgr.get_roi_for_role(role, frame_idx)
-            except Exception:
-                roi_obj = None
+    # No longer need the separate fuel extraction block at the end
 
-        if roi_obj is not None:
-            img = rois_map.get(roi_obj.id)
-            # may be None
-            return img
-
-        # missing role -> None
-        return None
-
-    sh_speed_roi = _get_roi_image("sh_speed")
-    sh_altitude_roi = _get_roi_image("sh_altitude")
-    ss_speed_roi = _get_roi_image("ss_speed")
-    ss_altitude_roi = _get_roi_image("ss_altitude")
-    time_roi = _get_roi_image("time")
-
-    # Extract time first. If there is no time data we can skip heavy processing for this frame.
-    if debug:
-        logger.debug("Attempting to extract time before other data to decide whether to process frame")
-
-    try:
-        # If there is no time ROI, treat as missing time and skip
-        if time_roi is None:
-            if debug:
-                logger.debug("Time ROI not available; skipping frame processing")
-            time_data = {}
-        else:
-            time_data = extract_time_data(time_roi, display_rois, debug, zero_time_met)
-    except Exception as e:
-        logger.error(f"Error extracting time data early: {str(e)}")
-        if debug:
-            logger.debug(traceback.format_exc())
-        time_data = {}
-
-    # Early exit: if no time was detected, don't process this frame further
-    if not time_data:
-        if debug:
-            logger.debug("No time detected in frame; skipping further extraction (engines/fuel/vehicle data)")
-        # Return empty vehicle dicts and the (empty) time_data to keep callsites safe
-        return {}, {}, time_data
-
-    # Extract data for Superheavy and Starship
-    superheavy_data = extract_superheavy_data(sh_speed_roi, sh_altitude_roi, display_rois, debug)
-    starship_data = extract_starship_data(ss_speed_roi, ss_altitude_roi, display_rois, debug)
-
-    # Cache values to avoid repeated dictionary lookups
-    sh_speed = superheavy_data.get("speed")
-    sh_altitude = superheavy_data.get("altitude")
-    ss_speed = starship_data.get("speed")
-    ss_altitude = starship_data.get("altitude")
-    
-    # Handle Starship data fallback
-    if not ss_speed or not ss_altitude:
-        if debug:
-            logger.debug("Starship data incomplete, using Superheavy data as fallback")
-            logger.debug(f"Before fallback - SS speed: {ss_speed}, SS altitude: {ss_altitude}")
-            logger.debug(f"Fallback data - SH speed: {sh_speed}, SH altitude: {sh_altitude}")
-
-        # Use Superheavy data selectively where Starship data is missing
-        if not ss_speed:
-            starship_data["speed"] = sh_speed
-        if not ss_altitude:
-            starship_data["altitude"] = sh_altitude
-    
-    # Extract fuel levels
-    if debug:
-        logger.debug("Extracting fuel levels")
-    
-    try:
-        # Ensure fuel_data is always defined to avoid UnboundLocalError in debug logging
-        fuel_data = None
-        if has_fuel_roi:
-            fuel_data = extract_fuel_levels(image, debug)
-            # Add fuel level data to vehicle data
-            superheavy_data["fuel"] = fuel_data.get("superheavy", {"lox": {"fullness": 0}, "ch4": {"fullness": 0}})
-            starship_data["fuel"] = fuel_data.get("starship", {"lox": {"fullness": 0}, "ch4": {"fullness": 0}})
-        else:
-            if debug:
-                logger.debug("No fuel ROIs configured; skipping fuel extraction")
-            # Reuse same empty dict for both to reduce allocations
-            empty_fuel = {"lox": {"fullness": 0}, "ch4": {"fullness": 0}}
-            superheavy_data["fuel"] = empty_fuel
-            starship_data["fuel"] = empty_fuel
-            # Mirror structure so later debug logging can read from fuel_data if needed
-            fuel_data = {"superheavy": empty_fuel, "starship": empty_fuel}
-        
-        if debug and fuel_data:
-            # Cache fuel values for logging (use .get chains to be defensive)
-            sh_lox = fuel_data.get("superheavy", {}).get("lox", {}).get("fullness", 0)
-            sh_ch4 = fuel_data.get("superheavy", {}).get("ch4", {}).get("fullness", 0)
-            ss_lox = fuel_data.get("starship", {}).get("lox", {}).get("fullness", 0)
-            ss_ch4 = fuel_data.get("starship", {}).get("ch4", {}).get("fullness", 0)
-            logger.debug(f"Fuel levels - SH: LOX {sh_lox:.1f}%, CH4 {sh_ch4:.1f}%, "
-                        f"SS: LOX {ss_lox:.1f}%, CH4 {ss_ch4:.1f}%")
-    except Exception as e:
-        logger.error(f"Error extracting fuel levels: {str(e)}")
-        if debug:
-            logger.debug(traceback.format_exc())
-        # Reuse same empty dict for both to reduce allocations and ensure fuel_data exists
-        empty_fuel = {"lox": {"fullness": 0}, "ch4": {"fullness": 0}}
-        superheavy_data["fuel"] = empty_fuel
-        starship_data["fuel"] = empty_fuel
-        fuel_data = {"superheavy": empty_fuel, "starship": empty_fuel}
-    
-    # Detect engine status via centralized engine_detection.detect_engine_status
-    try:
-        engine_data = detect_engine_status(image, debug, roi_manager=roi_manager, frame_idx=frame_idx)
-        # Add engine data to vehicle data (may be empty dicts if no engine ROIs)
-        superheavy_data["engines"] = engine_data.get("superheavy", {})
-        starship_data["engines"] = engine_data.get("starship", {})
-    except Exception as e:
-        logger.error(f"Error detecting engine status: {str(e)}")
-        if debug:
-            logger.debug(traceback.format_exc())
-        # Add empty engine data to avoid KeyError
-        superheavy_data["engines"] = {}
-        starship_data["engines"] = {}
-
-    # Updated Starship speed/altitude values after possible fallback
     if debug:
         logger.debug("Data extraction complete")
-        ss_speed = starship_data.get("speed")  # Get updated value after fallback
-        ss_altitude = starship_data.get("altitude")  # Get updated value after fallback
-        logger.debug(f"Final data - SH: speed={sh_speed}, altitude={sh_altitude}")
-        logger.debug(f"Final data - SS: speed={ss_speed}, altitude={ss_altitude}")
-        
+        for vehicle, data in vehicles_data.items():
+            logger.debug(f"Final data - {vehicle}: speed={data['speed']}, altitude={data['altitude']}")
         if time_data:
-            # Format time string more efficiently
             sign = time_data.get("sign", "")
             h = time_data.get("hours", 0)
             m = time_data.get("minutes", 0)
@@ -423,4 +207,4 @@ def extract_data(image: np.ndarray, display_rois: bool = False, debug: bool = Fa
         else:
             logger.debug("Final data - Time: None")
     
-    return superheavy_data, starship_data, time_data
+    return {"vehicles": vehicles_data, "time": time_data}

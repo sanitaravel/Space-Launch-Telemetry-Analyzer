@@ -52,6 +52,7 @@ coverage.xml
 cover/
 *.test_script.py
 test_script.py
+*.test.json
 
 # Translations
 *.mo

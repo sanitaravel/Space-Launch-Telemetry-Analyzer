@@ -1,72 +1,82 @@
 {
-  "version": 1,
+  "version": 4,
+  "video_source": {
+    "type": "twitter/x",
+    "url": "https://x.com/i/broadcasts/1lPKqMQbAWLKb"
+  },
   "time_unit": "frames",
+  "vehicles": ["superheavy", "starship"],
   "rois": [
     {
-      "id": "SH_SPEED",
+      "id": "speed",
+      "vehicle": "superheavy",
       "label": "Superheavy Speed",
       "y": 913,
       "h": 25,
       "x": 359,
       "w": 83,
-      "start_time": 71993,
-      "end_time": 84888,
-      "match_to_role": "sh_speed"
+      "start_time": 63894,
+      "end_time": 76918,
+      "measurement_unit": "km/h"
     },
     {
-      "id": "SH_ALTITUDE",
+      "id": "altitude",
+      "vehicle": "superheavy",
       "label": "Superheavy Altitude",
       "y": 948,
       "h": 25,
       "x": 392,
       "w": 50,
-      "start_time": 71993,
-      "end_time": 84888,
-      "match_to_role": "sh_altitude"
+      "start_time": 63894,
+      "end_time": 76918,
+      "measurement_unit": "km"
     },
     {
-      "id": "SS_SPEED",
+      "id": "speed",
+      "vehicle": "starship",
       "label": "Starship Speed",
       "y": 913,
       "h": 25,
       "x": 1539,
       "w": 83,
-      "start_time": 71993,
-      "end_time": 190318,
-      "match_to_role": "ss_speed"
+      "start_time": 63894,
+      "end_time": 81412,
+      "measurement_unit": "km/h"
     },
     {
-      "id": "SS_ALTITUDE",
+      "id": "altitude",
+      "vehicle": "starship",
       "label": "Starship Altitude",
       "y": 948,
       "h": 25,
       "x": 1572,
       "w": 50,
-      "start_time": 71993,
-      "end_time": 190318,
-      "match_to_role": "ss_altitude"
+      "start_time": 63894,
+      "end_time": 81412,
+      "measurement_unit": "km"
     },
     {
-      "id": "TIME",
+      "id": "time",
+      "vehicle": null,
       "label": "Time Display",
       "y": 940,
       "h": 44,
       "x": 860,
       "w": 197,
-      "start_time": 71993,
-      "end_time": 190318,
-      "match_to_role": "time"
+      "start_time": 63894,
+      "end_time": 81412,
+      "measurement_unit": "[+-]\\d{2}:\\d{2}:\\d{2}"
     },
     {
-      "id": "SH_ENGINES",
+      "id": "engines",
+      "vehicle": "superheavy",
       "label": "Superheavy Engine Points",
       "y": 0,
       "h": 0,
       "x": 0,
       "w": 0,
-      "start_time": 71993,
-      "end_time": 84888,
-      "match_to_role": "sh_engines",
+      "start_time": 63894,
+      "end_time": 76918,
       "points": {
         "central_stack": [
           [109, 970],
@@ -110,21 +120,25 @@
       }
     },
     {
-      "id": "SS_ENGINES",
+      "id": "engines",
+      "vehicle": "starship",
       "label": "Starship Engine Points",
       "y": 0,
       "h": 0,
       "x": 0,
       "w": 0,
-      "start_time": 71993,
-      "end_time": 190318,
-      "match_to_role": "ss_engines",
+      "start_time": 63894,
+      "end_time": 81412,
       "points": {
         "rearth": [
-          [1815,952],[1801,978],[1830,978]
+          [1815, 952],
+          [1801, 978],
+          [1830, 978]
         ],
         "rvac": [
-          [1764,939],[1866,940],[1815,1028]
+          [1764, 939],
+          [1866, 940],
+          [1815, 1028]
         ]
       }
     }

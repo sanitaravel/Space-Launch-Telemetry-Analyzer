@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 
 class ROI:
     def __init__(self, data: Dict):
-        # expected keys: id,label,y,h,x,w,start_time,end_time,match_to_role,points
+        # expected keys: id,label,y,h,x,w,start_time,end_time,vehicle,measurement_unit,points
         self.id = data.get("id")
         self.label = data.get("label")
         self.y = int(data.get("y", 0))
@@ -19,7 +19,8 @@ class ROI:
         # In our config these are frame indices (or null)
         self.start_frame = None if data.get("start_time") is None else int(data.get("start_time"))
         self.end_frame = None if data.get("end_time") is None else int(data.get("end_time"))
-        self.match_to_role = data.get("match_to_role")
+        self.vehicle = data.get("vehicle")  # New: Vehicle assignment
+        self.measurement_unit = data.get("measurement_unit")  # New: Unit for extraction
         # Optional pre-defined engine/point coordinates stored in the ROI config
         pts = data.get("points")
         if pts is None:
@@ -61,7 +62,8 @@ class ROI:
             "h": self.h,
             "start_frame": self.start_frame,
             "end_frame": self.end_frame,
-            "match_to_role": self.match_to_role,
+            "vehicle": self.vehicle,  # New
+            "measurement_unit": self.measurement_unit,  # New
             "points": self.points,
         }
 
@@ -72,6 +74,7 @@ class ROIManager:
         self.config_path = Path(config_path) if config_path else Path("configs/default_rois.json")
         self.version = None
         self.time_unit = None
+        self.vehicles: List[str] = []  # New: List of vehicles from config
         self._rois: List[ROI] = []
         self.reload()
 
@@ -84,6 +87,7 @@ class ROIManager:
                 data = json.loads(text)
                 self.version = data.get("version")
                 self.time_unit = data.get("time_unit")
+                self.vehicles = data.get("vehicles", [])  # New: Load vehicles list
                 rois = data.get("rois", [])
                 parsed: List[ROI] = []
                 for r in rois:
@@ -92,7 +96,7 @@ class ROIManager:
                     except Exception as e:
                         logger.error(f"Failed to parse ROI entry {r}: {e}")
                 self._rois = parsed
-                logger.info(f"Loaded {len(self._rois)} ROIs (time_unit={self.time_unit})")
+                logger.info(f"Loaded {len(self._rois)} ROIs for vehicles {self.vehicles} (time_unit={self.time_unit})")
             except FileNotFoundError:
                 logger.error(f"ROI config not found at {self.config_path}")
                 self._rois = []
@@ -105,13 +109,18 @@ class ROIManager:
         with self._lock:
             return [r for r in self._rois if r.is_active(frame_idx)]
 
-    def get_roi_for_role(self, role: str, frame_idx: Optional[int] = None) -> Optional[ROI]:
-        """Return the first ROI matching match_to_role==role and active at frame_idx, or None."""
+    def get_roi_for_id(self, roi_id: str, vehicle: Optional[str] = None, frame_idx: Optional[int] = None) -> Optional[ROI]:
+        """Return the first ROI matching id and optionally vehicle, active at frame_idx."""
         with self._lock:
             for r in self._rois:
-                if r.match_to_role == role and r.is_active(frame_idx):
+                if r.id == roi_id and (vehicle is None or r.vehicle == vehicle) and r.is_active(frame_idx):
                     return r
             return None
+
+    def get_rois_for_vehicle(self, vehicle: str, frame_idx: Optional[int] = None) -> List[ROI]:
+        """Return ROIs for a specific vehicle, active at frame_idx."""
+        with self._lock:
+            return [r for r in self._rois if r.vehicle == vehicle and r.is_active(frame_idx)]
 
     def list_rois(self) -> List[Dict]:
         with self._lock:
@@ -124,7 +133,9 @@ _default_manager: Optional[ROIManager] = None
 def get_default_manager() -> ROIManager:
     global _default_manager
     if _default_manager is None:
-        _default_manager = ROIManager()
+        # Update to load a specific config, e.g., for SpaceX Starship
+        config_path = "configs/spacex/starship/flight_6_rois.json"  # Or make dynamic
+        _default_manager = ROIManager(config_path)
     return _default_manager
 
 

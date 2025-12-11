@@ -27,8 +27,13 @@ def process_image(image_path: str, display_rois: bool, debug: bool) -> None:
             
         logger.debug(f"Image loaded successfully, shape: {image.shape}")
         
-        superheavy_data, starship_data, time_data = extract_data(
+        extracted = extract_data(
             image, display_rois=display_rois, debug=debug)
+        vehicles_data = extracted.get("vehicles", {})
+        time_data = extracted.get("time", {})
+        # For backward compatibility
+        superheavy_data = vehicles_data.get("superheavy", {})
+        starship_data = vehicles_data.get("starship", {})
             
         if debug:
             logger.debug(

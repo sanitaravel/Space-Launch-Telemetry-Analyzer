@@ -46,7 +46,7 @@ def prompt_menu_options(message, options):
     return menu_answer['option']
 
 def download_from_launch_list():
-    """Download video from the GitHub flight list."""
+    """Download video from the GitHub flight list with hierarchical selection."""
     clear_screen()
     logger.debug("Downloading from flight list")
     
@@ -54,44 +54,100 @@ def download_from_launch_list():
     if not flight_data:
         return handle_error("Could not retrieve flight data. Please try again later.")
     
-    available_flights = get_available_flights(flight_data)
-    
-    if not available_flights:
-        return handle_error("All flights have already been downloaded or no flights are available.")
-    
-    choices = available_flights + [("Back to download menu", -1)]
-    
-    selected_flight_num = display_flight_selection_menu(choices)
-    
-    if selected_flight_num == -1:  # Back option
+    # Step 1: Select company
+    company = select_company(flight_data)
+    if company == 'Back to download menu':
         clear_screen()
         return download_media_menu()
     
-    download_status = download_selected_flight(flight_data, selected_flight_num)
+    # Step 2: Select vehicle
+    vehicle = select_vehicle(flight_data, company)
+    if vehicle == 'Back to company selection':
+        clear_screen()
+        return download_from_launch_list()
     
-    return prompt_continue_after_download(download_status, selected_flight_num)
+    # Step 3: Select flight
+    selected_unique_key = select_flight(flight_data, company, vehicle)
+    if selected_unique_key == 'Back to vehicle selection':
+        clear_screen()
+        return download_from_launch_list()
+    
+    download_status = download_selected_flight(flight_data, selected_unique_key)
+    
+    return prompt_continue_after_download(download_status, selected_unique_key)
 
 def get_flight_data():
     """Retrieve flight data from repository."""
-    return get_launch_data()
+    data = get_launch_data()
+    if not data:
+        return None
+    return flatten_flight_data(data)
 
-def get_available_flights(flight_data):
-    """Create a list of flights that haven't been downloaded yet."""
+def flatten_flight_data(data):
+    """Flatten the nested flight data structure into a flat dict."""
+    flat_data = {}
+    # Handle both old nested format and new flat format
+    if isinstance(data, dict) and all(isinstance(v, dict) and 'type' in v and 'url' in v for v in data.values()):
+        # New flat format: {"flight_1": {"type": ..., "url": ...}, ...}
+        for flight_key, flight_info in data.items():
+            unique_key = f"spacex_starship_{flight_key}"
+            flat_data[unique_key] = {
+                "company": "spacex",
+                "vehicle": "starship",
+                "flight_key": flight_key,
+                "type": flight_info.get("type"),
+                "url": flight_info.get("url")
+            }
+    else:
+        # Old nested format: {"company": {"vehicle": {"flight": {...}}}}
+        for company, vehicles in data.items():
+            for vehicle, flights in vehicles.items():
+                for flight_key, flight_info in flights.items():
+                    # Create a unique key
+                    unique_key = f"{company}_{vehicle}_{flight_key}"
+                    flat_data[unique_key] = {
+                        "company": company,
+                        "vehicle": vehicle,
+                        "flight_key": flight_key,
+                        "type": flight_info.get("type"),
+                        "url": flight_info.get("url")
+                    }
+    return flat_data
+
+def get_available_companies(flight_data):
+    """Get list of available companies."""
+    companies = set()
+    for unique_key, info in flight_data.items():
+        companies.add(info["company"])
+    return sorted(list(companies))
+
+def get_available_vehicles(flight_data, company):
+    """Get list of available vehicles for a company."""
+    vehicles = set()
+    for unique_key, info in flight_data.items():
+        if info["company"] == company:
+            vehicles.add(info["vehicle"])
+    return sorted(list(vehicles))
+
+def get_available_flights_for_vehicle(flight_data, company, vehicle):
+    """Create a list of flights for a specific company and vehicle that haven't been downloaded yet."""
     downloaded_flights = get_downloaded_launches()
     
     available_flights = []
-    for key, value in flight_data.items():
-        try:
-            flight_num = int(key.split("_")[1])
-            if flight_num not in downloaded_flights:
-                flight_type = "YouTube" if value["type"] == "youtube" else "Twitter/X"
-                available_flights.append((f"Flight {flight_num} ({flight_type})", flight_num))
-        except (IndexError, ValueError, KeyError):
-            logger.warning(f"Skipping malformed flight entry: {key}")
-            continue
+    for unique_key, info in flight_data.items():
+        if info["company"] == company and info["vehicle"] == vehicle:
+            try:
+                flight_num = int(info["flight_key"].split("_")[1])
+                if flight_num not in downloaded_flights:
+                    flight_type = "YouTube" if info["type"] == "youtube" else "Twitter/X"
+                    label = f"Flight {flight_num} ({flight_type})"
+                    available_flights.append((label, unique_key))
+            except (IndexError, ValueError, KeyError):
+                logger.warning(f"Skipping malformed flight entry: {unique_key}")
+                continue
     
     # Sort by flight number
-    available_flights.sort(key=lambda x: x[1])
+    available_flights.sort(key=lambda x: int(x[1].split("flight_")[1]))
     return available_flights
 
 def display_flight_selection_menu(choices):
@@ -107,20 +163,136 @@ def display_flight_selection_menu(choices):
     flight_answer = inquirer.prompt(flight_question)
     return flight_answer['selected_flight']
 
-def download_selected_flight(flight_data, selected_flight_num):
+def select_company(flight_data):
+    """Select a company from available companies."""
+    companies = get_available_companies(flight_data)
+    if not companies:
+        print("No companies available.")
+        input("\nPress Enter to continue...")
+        return 'Back to download menu'
+    
+    choices = companies + ['Back to download menu']
+    
+    return prompt_menu_options("Select a company:", choices)
+
+def select_vehicle(flight_data, company):
+    """Select a vehicle for the given company."""
+    vehicles = get_available_vehicles(flight_data, company)
+    if not vehicles:
+        print(f"No vehicles available for {company}.")
+        input("\nPress Enter to continue...")
+        return 'Back to company selection'
+    
+    vehicle_choices = [vehicle.replace('_', ' ').title() for vehicle in vehicles]
+    choices = vehicle_choices + ['Back to company selection']
+    
+    selected_display = prompt_menu_options(f"Select a vehicle for {company.replace('_', ' ').title()}:", choices)
+    
+    if selected_display == 'Back to company selection':
+        return selected_display
+    
+    # Convert back to internal format
+    return selected_display.lower().replace(' ', '_')
+
+def select_or_create_vehicle(flight_data, company):
+    """Select a vehicle for the given company or create a new one."""
+    vehicles = get_available_vehicles(flight_data, company)
+    if not vehicles:
+        print(f"No existing vehicles found for {company}.")
+    
+    # Format vehicle names for display
+    vehicle_choices = [vehicle.replace('_', ' ').title() for vehicle in vehicles]
+    choices = vehicle_choices + ['Create new vehicle', 'Back to company selection']
+    
+    selected_display = prompt_menu_options(f"Select a vehicle for {company.replace('_', ' ').title()}:", choices)
+    
+    if selected_display == 'Back to company selection':
+        return selected_display
+    elif selected_display == 'Create new vehicle':
+        return create_custom_vehicle()
+    else:
+        # Convert back to internal format
+        return selected_display.lower().replace(' ', '_')
+
+def select_or_create_company(flight_data):
+    """Select a company from available companies or create a new one."""
+    companies = get_available_companies(flight_data)
+    if not companies:
+        print("No existing companies found.")
+    
+    # Format company names for display
+    company_choices = [company.replace('_', ' ').title() for company in companies]
+    choices = company_choices + ['Create new provider', 'Back to platform selection']
+    
+    selected_display = prompt_menu_options("Select a launch provider:", choices)
+    
+    if selected_display == 'Back to platform selection':
+        return selected_display
+    elif selected_display == 'Create new provider':
+        return create_custom_company()
+    else:
+        # Convert back to internal format
+        return selected_display.lower().replace(' ', '_')
+
+def create_custom_company():
+    """Prompt user to create a custom company name."""
+    questions = [
+        inquirer.Text('company', message="Enter the launch provider name", 
+                     validate=lambda _, x: len(x.strip()) > 0)
+    ]
+    
+    answers = inquirer.prompt(questions)
+    
+    if not answers or not answers['company'].strip():
+        return None
+    
+    # Convert to internal format (lowercase, underscores)
+    return answers['company'].strip().lower().replace(' ', '_')
+
+def create_custom_vehicle():
+    """Prompt user to create a custom vehicle name."""
+    questions = [
+        inquirer.Text('vehicle', message="Enter the rocket name", 
+                     validate=lambda _, x: len(x.strip()) > 0)
+    ]
+    
+    answers = inquirer.prompt(questions)
+    
+    if not answers or not answers['vehicle'].strip():
+        return None
+    
+    # Convert to internal format (lowercase, underscores)
+    return answers['vehicle'].strip().lower().replace(' ', '_')
+
+def select_flight(flight_data, company, vehicle):
+    """Select a flight for the given company and vehicle."""
+    available_flights = get_available_flights_for_vehicle(flight_data, company, vehicle)
+    
+    if not available_flights:
+        print(f"All flights have already been downloaded for {company} {vehicle}.")
+        input("\nPress Enter to continue...")
+        return 'Back to vehicle selection'
+    
+    choices = available_flights + [("Back to vehicle selection", 'Back to vehicle selection')]
+    
+    return display_flight_selection_menu(choices)
+
+def download_selected_flight(flight_data, selected_unique_key):
     """Download the selected flight."""
-    flight_key = f"flight_{selected_flight_num}"
-    flight_info = flight_data.get(flight_key)
+    flight_info = flight_data.get(selected_unique_key)
     
     if not flight_info:
-        print(f"Flight information for {flight_key} not found.")
+        print(f"Flight information for {selected_unique_key} not found.")
         return False
     
     url = flight_info['url']
     flight_type = flight_info['type']
+    flight_identifier = flight_info['flight_key']
+    company = flight_info['company']
+    vehicle = flight_info['vehicle']
     
-    print(f"Downloading {flight_key} from {url}...")
-    return execute_download(flight_type, url, selected_flight_num)
+    print(f"Downloading {selected_unique_key} from {url}...")
+    return execute_download(flight_type, url, flight_identifier, company, vehicle)
 
 def handle_error(message):
     """Display error message and prompt to continue."""
@@ -129,12 +301,12 @@ def handle_error(message):
     clear_screen()
     return True
 
-def prompt_continue_after_download(success, flight_num):
+def prompt_continue_after_download(success, unique_key):
     """Show download status message and prompt to continue."""
     if success:
-        print(f"Download of flight_{flight_num} completed successfully.")
+        print(f"Download of {unique_key} completed successfully.")
     else:
-        print(f"Failed to download flight_{flight_num}.")
+        print(f"Failed to download {unique_key}.")
     
     input("\nPress Enter to continue...")
     clear_screen()
@@ -156,7 +328,27 @@ def download_from_custom_url():
     if not url:
         return handle_error("Download cancelled.")
     
-    success = download_from_platform(platform, url, flight_number)
+    # Get flight data for company/vehicle selection
+    flight_data = get_flight_data()
+    if not flight_data:
+        print("Could not retrieve flight data for provider/vehicle selection.")
+        print("Continuing with download without provider/vehicle information...")
+        company = None
+        vehicle = None
+    else:
+        # Prompt for company (launch provider)
+        company = select_or_create_company(flight_data)
+        if company == 'Back to platform selection':
+            clear_screen()
+            return download_from_custom_url()
+        
+        # Prompt for vehicle (rocket)
+        vehicle = select_or_create_vehicle(flight_data, company)
+        if vehicle == 'Back to company selection':
+            clear_screen()
+            return download_from_custom_url()
+    
+    success = download_from_platform(platform, url, flight_number, company, vehicle)
     
     if success:
         print("Download completed successfully.")
@@ -191,18 +383,19 @@ def get_url_and_flight_number(platform):
     
     return answers['url'].strip(), int(answers['flight_number'])
 
-def download_from_platform(platform, url, flight_number):
+def download_from_platform(platform, url, flight_number, company=None, vehicle=None):
     """Execute download based on selected platform."""
+    flight_identifier = f"flight_{flight_number}"
     if platform == 'Twitter/X Broadcast':
-        return download_twitter_broadcast(url, flight_number)
+        return download_twitter_broadcast(url, flight_identifier, company, vehicle)
     elif platform == 'YouTube Video':
-        return download_youtube_video(url, flight_number)
+        return download_youtube_video(url, flight_identifier, company, vehicle)
     return False
 
-def execute_download(media_type, url, flight_num):
+def execute_download(media_type, url, flight_identifier, company=None, vehicle=None):
     """Execute download based on media type."""
     if media_type == "youtube":
-        return download_youtube_video(url, flight_num)
+        return download_youtube_video(url, flight_identifier, company, vehicle)
     elif media_type in ["twitter/x", "twitter", "x"]:
-        return download_twitter_broadcast(url, flight_num)
+        return download_twitter_broadcast(url, flight_identifier, company, vehicle)
     return False

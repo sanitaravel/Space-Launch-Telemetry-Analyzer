@@ -2,78 +2,99 @@
 Tests for download utility functions in download/utils.py.
 """
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 import json
-import requests
+import os
 
-from download.utils import get_launch_data, get_downloaded_launches, FLIGHTS_URL
+from download.utils import get_launch_data, get_downloaded_launches
 
 class TestGetLaunchData:
     """Test suite for get_launch_data function."""
     
-    @patch('download.utils.requests.get')
-    def test_get_launch_data_success(self, mock_get):
-        """Test successful retrieval of launch data."""
-        # Setup mock response
-        mock_response = MagicMock()
-        mock_response.json.return_value = [{"flight": 1, "name": "Test"}, {"flight": 2, "name": "Test2"}]
-        mock_get.return_value = mock_response
+    @patch('os.path.exists')
+    @patch('os.walk')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_get_launch_data_success(self, mock_file, mock_walk, mock_exists):
+        """Test successful retrieval of launch data from config files."""
+        # Setup mocks
+        mock_exists.return_value = True
+        
+        # Mock os.walk to return config files
+        mock_walk.return_value = [
+            ('configs', ['spacex', 'blue_origin'], []),
+            ('configs/spacex', ['starship'], []),
+            ('configs/spacex/starship', [], ['flight_1_rois.json', 'flight_2_rois.json']),
+            ('configs/blue_origin', ['new_glenn'], []),
+            ('configs/blue_origin/new_glenn', [], ['flight_1_rois.json'])
+        ]
+        
+        # Mock file contents
+        mock_file.return_value.read.return_value = json.dumps({
+            "video_source": {
+                "type": "twitter/x",
+                "url": "https://example.com/video1"
+            }
+        })
         
         # Call the function
         result = get_launch_data()
         
         # Assert results
         assert result is not None
-        assert len(result) == 2
-        assert result[0]["flight"] == 1
-        assert result[1]["name"] == "Test2"
-        mock_get.assert_called_once_with(FLIGHTS_URL, timeout=10)
+        assert "spacex" in result
+        assert "starship" in result["spacex"]
+        assert "flight_1" in result["spacex"]["starship"]
+        assert result["spacex"]["starship"]["flight_1"]["type"] == "twitter/x"
+        assert result["spacex"]["starship"]["flight_1"]["url"] == "https://example.com/video1"
     
-    @patch('download.utils.requests.get')
-    def test_get_launch_data_request_error(self, mock_get):
-        """Test handling of request exceptions."""
-        # Setup mock to raise exception
-        mock_get.side_effect = requests.RequestException("Connection error")
+    @patch('os.path.exists')
+    def test_get_launch_data_configs_not_found(self, mock_exists):
+        """Test when configs directory does not exist."""
+        mock_exists.return_value = False
         
-        # Call the function with mocked print
-        with patch('builtins.print') as mock_print:
-            result = get_launch_data()
-            
-            # Assert results
-            assert result is None
-            mock_print.assert_called_with("Error fetching flight data: Connection error")
+        # Call the function
+        result = get_launch_data()
+        
+        # Assert results
+        assert result is None
     
-    @patch('download.utils.requests.get')
-    def test_get_launch_data_http_error(self, mock_get):
-        """Test handling of HTTP errors."""
-        # Setup mock to raise exception
-        mock_response = MagicMock()
-        mock_response.raise_for_status.side_effect = requests.HTTPError("404 Client Error")
-        mock_get.return_value = mock_response
+    @patch('os.path.exists')
+    @patch('os.walk')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_get_launch_data_invalid_json(self, mock_file, mock_walk, mock_exists):
+        """Test handling of invalid JSON in config files."""
+        mock_exists.return_value = True
+        mock_walk.return_value = [
+            ('configs/spacex/starship', [], ['flight_1_rois.json'])
+        ]
         
-        # Call the function with mocked print
-        with patch('builtins.print') as mock_print:
-            result = get_launch_data()
-            
-            # Assert results
-            assert result is None
-            mock_print.assert_called_with("Error fetching flight data: 404 Client Error")
+        # Mock invalid JSON
+        mock_file.return_value.read.return_value = "invalid json"
+        
+        # Call the function
+        result = get_launch_data()
+        
+        # Assert results - should return empty dict since file failed to parse
+        assert result == {}
     
-    @patch('download.utils.requests.get')
-    def test_get_launch_data_json_error(self, mock_get):
-        """Test handling of JSON decoding errors."""
-        # Setup mock response with invalid JSON
-        mock_response = MagicMock()
-        mock_response.json.side_effect = json.JSONDecodeError("Invalid JSON", "", 0)
-        mock_get.return_value = mock_response
+    @patch('os.path.exists')
+    @patch('os.walk')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_get_launch_data_missing_video_source(self, mock_file, mock_walk, mock_exists):
+        """Test handling of config files without video_source."""
+        mock_exists.return_value = True
+        mock_walk.return_value = [
+            ('configs/spacex/starship', [], ['flight_1_rois.json'])
+        ]
         
-        # Call the function with mocked print
-        with patch('builtins.print') as mock_print:
-            result = get_launch_data()
-            
-            # Assert results
-            assert result is None
-            mock_print.assert_called_with("Error parsing flight data: Invalid JSON: line 1 column 1 (char 0)")
+        # Mock config without video_source
+        mock_file.return_value.read.return_value = json.dumps({"version": 3})
+        
+        # Call the function
+        result = get_launch_data()
+        
+        # Assert results - should return empty dict since no valid video_source
+        assert result == {}
 
 
 class TestGetDownloadedLaunches:

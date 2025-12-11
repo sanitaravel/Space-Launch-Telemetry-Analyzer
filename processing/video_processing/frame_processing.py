@@ -28,12 +28,13 @@ def process_frame(frame_number: int, frame: np.ndarray, display_rois: bool, debu
         dict: A dictionary containing the extracted data for the frame.
     """
     try:
-        superheavy_data, starship_data, time_data = extract_data(
+        extracted = extract_data(
             frame, display_rois=display_rois, debug=debug, zero_time_met=zero_time_met, frame_idx=frame_number)
+        vehicles_data = extracted.get("vehicles", {})
+        time_data = extracted.get("time", {})
         frame_result = {
             "frame_number": frame_number,
-            "superheavy": superheavy_data,
-            "starship": starship_data,
+            "vehicles": vehicles_data,
             "time": time_data
         }
         return frame_result
@@ -64,12 +65,13 @@ def process_single_frame(frame_idx, frame, display_rois=False, debug=False, show
         dict: Results for the frame
     """
     try:
-        superheavy_data, starship_data, time_data = extract_data(
+        extracted = extract_data(
             frame, display_rois=display_rois, debug=debug, frame_idx=frame_idx)
+        vehicles_data = extracted.get("vehicles", {})
+        time_data = extracted.get("time", {})
         frame_result = {
             "frame_number": frame_idx,
-            "superheavy": superheavy_data,
-            "starship": starship_data,
+            "vehicles": vehicles_data,
             "time": time_data
         }
         
@@ -128,7 +130,26 @@ def process_video_frame(video_path: str, display_rois: bool = False, debug: bool
             return {"error": "Invalid time range"}
         
         # Choose a random frame within the range
+        # If display_rois is True, try to find a frame with active ROIs
         random_frame = random.randint(start_frame, end_frame)
+        
+        if display_rois:
+            from ocr.roi_manager import get_default_manager
+            manager = get_default_manager()
+            max_attempts = 10
+            attempt = 0
+            
+            while attempt < max_attempts:
+                active_rois = manager.get_active_rois(random_frame)
+                if active_rois:
+                    break
+                # Try another random frame
+                random_frame = random.randint(start_frame, end_frame)
+                attempt += 1
+            
+            if attempt == max_attempts:
+                logger.warning(f"Could not find a frame with active ROIs after {max_attempts} attempts. Using frame {random_frame} anyway.")
+        
         logger.info(f"Selected random frame {random_frame} (out of {frame_count})")
         
         # Set the frame position and read the frame

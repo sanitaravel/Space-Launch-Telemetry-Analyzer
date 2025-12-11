@@ -78,7 +78,7 @@ def get_reader() -> easyocr.Reader:
         return _init_reader(gpu=True)
     return _reader
 
-def extract_values_from_roi(roi: np.ndarray, mode: str = "data", display_transformed: bool = False, debug: bool = False) -> Dict:
+def extract_values_from_roi(roi: np.ndarray, mode: str = "data", display_transformed: bool = False, debug: bool = False, regex: Optional[str] = None) -> Dict:
     """
     Extract values from a region of interest (ROI) in an image.
 
@@ -112,7 +112,7 @@ def extract_values_from_roi(roi: np.ndarray, mode: str = "data", display_transfo
                 logger.debug(f"Process {pid}: GPU memory - Allocated: {allocated:.2f} MB, Reserved: {reserved:.2f} MB")
         
         # Use EasyOCR to extract text with appropriate parameters for each mode
-        allowlist = '0123456789T+-:' if mode == "time" else '0123456789.'
+        allowlist = '0123456789T+-:' if mode == "time" else '0123456789.,'
                 
         # Process the image with error handling
         try:
@@ -181,7 +181,7 @@ def extract_values_from_roi(roi: np.ndarray, mode: str = "data", display_transfo
             logger.debug(f"Extracted altitude value: {altitude}")
         return {"value": altitude}
     elif mode == "time":
-        time = extract_time(text)
+        time = extract_time(text, regex or r'[+-]\d{2}:\d{2}:\d{2}')
         if debug:
             if time:
                 logger.debug(f"Extracted time: {time['sign']} {time.get('hours', 0):02}:{time.get('minutes', 0):02}:{time.get('seconds', 0):02}")
@@ -203,13 +203,15 @@ def extract_single_value(text: str) -> Optional[int]:
     Returns:
         Optional[int]: The extracted numeric value, or None if no value was found.
     """
+    # Remove commas as they are used as thousands separators, not decimal points
+    text = text.replace(',', '')
     numbers = re.findall(r'\d+(?:\.\d+)?', text)
     if numbers:
         return float(numbers[0])
     logger.debug(f"No numeric value found in text: '{text}'")
     return None
 
-def extract_time(text: str) -> Optional[Dict[str, int]]:
+def extract_time(text: str, regex: str = r'[+-]\d{2}:\d{2}:\d{2}') -> Optional[Dict[str, int]]:
     """
     Extract time from the cleaned text.
 
@@ -219,7 +221,7 @@ def extract_time(text: str) -> Optional[Dict[str, int]]:
     Returns:
         dict: A dictionary containing the extracted time.
     """
-    match = re.search(r'[+-]\d{2}:\d{2}:\d{2}', text)
+    match = re.search(regex, text)
     if match:
         time_str = match.group(0)
         sign = time_str[0]

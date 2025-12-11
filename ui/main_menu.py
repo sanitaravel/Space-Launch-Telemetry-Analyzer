@@ -6,6 +6,7 @@ from utils.logger import get_logger
 from utils.terminal import clear_screen
 from .video_menu import video_processing_menu
 from .visualization_menu import visualization_menu
+from config_gui.config_gui_menu import config_gui_menu
 from download import download_media_menu
 
 logger = get_logger(__name__)
@@ -28,6 +29,7 @@ def display_menu(debug_status) -> bool:
             choices=[
                 'Video Processing',
                 'Data Visualization',
+                'Config Menu',
                 'Download Media',
                 f'Toggle Debug Mode (Currently: {debug_status})',
                 'Exit'
@@ -44,6 +46,9 @@ def display_menu(debug_status) -> bool:
         return True
     elif answers['action'] == 'Data Visualization':
         visualization_menu()
+        return True
+    elif answers['action'] == 'Config Menu':
+        config_gui_menu()
         return True
     elif answers['action'] == 'Download Media':
         download_media_menu()

@@ -3,12 +3,40 @@ Visualization menu and related functionality.
 """
 import inquirer
 import os
+from pathlib import Path
 from utils.logger import get_logger
 from utils.terminal import clear_screen
 from utils.validators import validate_number
 from plot import plot_flight_data, compare_multiple_launches
 
 logger = get_logger(__name__)
+
+def get_results_providers():
+    """Get list of available launch providers from results folder."""
+    results_folder = Path('results')
+    if not results_folder.exists():
+        return []
+    return [d.name for d in results_folder.iterdir() if d.is_dir()]
+
+def get_results_rockets(provider):
+    """Get list of available rockets for a provider from results folder."""
+    provider_path = Path('results') / provider
+    if not provider_path.exists():
+        return []
+    return [d.name for d in provider_path.iterdir() if d.is_dir()]
+
+def get_results_launches(provider, rocket):
+    """Get list of available launches for a provider and rocket from results folder."""
+    rocket_path = Path('results') / provider / rocket
+    if not rocket_path.exists():
+        return []
+    launches = []
+    for launch_dir in rocket_path.iterdir():
+        if launch_dir.is_dir() and launch_dir.name.startswith('launch_'):
+            results_json = launch_dir / 'results.json'
+            if results_json.exists():
+                launches.append((launch_dir.name, str(results_json)))
+    return launches
 
 def visualization_menu():
     """Submenu for data visualization options."""
@@ -45,24 +73,74 @@ def visualization_menu():
 def visualize_flight_data():
     """Handle the visualize flight data menu option."""
     clear_screen()
-    results_dir = os.path.join('.', 'results')
-    launch_folders = [f for f in os.listdir(results_dir) if os.path.isdir(
-        os.path.join(results_dir, f)) and f != 'compare_launches']
-
-    if not launch_folders:
-        print("No launch folders found in ./results directory.")
+    
+    # Get hierarchical selection
+    providers = get_results_providers()
+    if not providers:
+        print("No launch providers found in results folder.")
         input("\nPress Enter to continue...")
         clear_screen()
         return True
     
-    logger.debug(f"Found {len(launch_folders)} launch folders for visualization")
-    
-    questions = [
+    provider_question = [
         inquirer.List(
-            'launch_folder',
-            message="Select the launch folder",
-            choices=launch_folders,
-        ),
+            'provider',
+            message="Select a launch provider",
+            choices=providers,
+        )
+    ]
+    provider_answer = inquirer.prompt(provider_question)
+    provider = provider_answer['provider']
+    
+    rockets = get_results_rockets(provider)
+    if not rockets:
+        print(f"No rockets found for provider {provider}.")
+        input("\nPress Enter to continue...")
+        clear_screen()
+        return True
+    
+    rocket_question = [
+        inquirer.List(
+            'rocket',
+            message="Select a rocket",
+            choices=rockets,
+        )
+    ]
+    rocket_answer = inquirer.prompt(rocket_question)
+    rocket = rocket_answer['rocket']
+    
+    launches = get_results_launches(provider, rocket)
+    if not launches:
+        print(f"No launches found for {provider}/{rocket}.")
+        input("\nPress Enter to continue...")
+        clear_screen()
+        return True
+    
+    launch_question = [
+        inquirer.List(
+            'launch',
+            message="Select a launch",
+            choices=[name for name, path in launches],
+        )
+    ]
+    launch_answer = inquirer.prompt(launch_question)
+    selected_name = launch_answer['launch']
+    
+    # Find the corresponding path
+    json_path = None
+    for name, path in launches:
+        if name == selected_name:
+            json_path = path
+            break
+    
+    if not json_path:
+        print("Error: Could not find selected launch.")
+        input("\nPress Enter to continue...")
+        clear_screen()
+        return True
+    
+    # Continue with time selection and plotting
+    questions = [
         inquirer.Text(
             'start_time', message="Start time in seconds (default: 0)", validate=validate_number),
         inquirer.Text(
@@ -72,7 +150,6 @@ def visualize_flight_data():
     ]
     answers = inquirer.prompt(questions)
 
-    json_path = os.path.join(results_dir, answers['launch_folder'], 'results.json')
     start_time = int(answers['start_time']) if answers['start_time'] else 0
     end_time = int(answers['end_time']) if answers['end_time'] else -1
     
@@ -99,7 +176,8 @@ def compare_multiple_launches_menu():
         answers['launches'], 
         answers['start_time'], 
         answers['end_time'], 
-        answers['show_figures']
+        answers['show_figures'],
+        launch_folders
     )
     
     input("\nPress Enter to continue...")
@@ -107,13 +185,21 @@ def compare_multiple_launches_menu():
     return True
 
 def get_launch_folders():
-    """Get available launch folders from results directory."""
-    results_dir = os.path.join('.', 'results')
-    launch_folders = [f for f in os.listdir(results_dir) if os.path.isdir(
-        os.path.join(results_dir, f)) and f != 'compare_launches']
+    """Get available launch folders from results directory with full paths."""
+    launches = []
+    providers = get_results_providers()
     
-    logger.debug(f"Found {len(launch_folders)} launch folders for comparison")
-    return launch_folders
+    for provider in providers:
+        rockets = get_results_rockets(provider)
+        for rocket in rockets:
+            launch_list = get_results_launches(provider, rocket)
+            for launch_name, json_path in launch_list:
+                # Create a display name that includes provider/rocket info
+                display_name = f"{provider}/{rocket}/{launch_name}"
+                launches.append((display_name, json_path))
+    
+    logger.debug(f"Found {len(launches)} launch folders for comparison")
+    return launches
 
 def validate_available_launches(launch_folders):
     """Validate that there are enough launch folders to compare."""
@@ -126,11 +212,14 @@ def validate_available_launches(launch_folders):
 
 def prompt_for_comparison_options(launch_folders):
     """Prompt user for comparison options."""
+    # Extract display names for the choices
+    display_names = [display_name for display_name, json_path in launch_folders]
+    
     questions = [
         inquirer.Checkbox(
             'launches',
             message="Select the launches to compare (press space to select)",
-            choices=launch_folders,
+            choices=display_names,
         ),
         inquirer.Text(
             'start_time', message="Start time in seconds (default: 0)", validate=validate_number),
@@ -150,14 +239,82 @@ def validate_selected_launches(selected_launches):
         return False
     return True
 
-def execute_launch_comparison(launches, start_time_input, end_time_input, show_figures):
+def detect_available_vehicles(json_paths):
+    """Detect all available vehicles across the selected JSON files."""
+    from plot.data_processing import load_and_clean_data, detect_vehicles
+    
+    available_vehicles = set()
+    
+    for json_path in json_paths:
+        try:
+            df = load_and_clean_data(json_path)
+            if not df.empty:
+                vehicles = detect_vehicles(df)
+                available_vehicles.update(vehicles)
+        except Exception as e:
+            logger.warning(f"Error detecting vehicles in {json_path}: {e}")
+    
+    # Return sorted list of vehicle names
+    return sorted(list(available_vehicles))
+
+def prompt_for_vehicle_selection(available_vehicles):
+    """Prompt user to select which vehicles to include in the comparison."""
+    if not available_vehicles:
+        return []
+    
+    # Format vehicle names for display
+    vehicle_choices = []
+    for vehicle in available_vehicles:
+        display_name = vehicle.replace('_', ' ').title()
+        vehicle_choices.append((f"{display_name} ({vehicle})", vehicle))
+    
+    questions = [
+        inquirer.Checkbox(
+            'vehicles',
+            message="Select vehicles to include in the comparison (press space to select)",
+            choices=vehicle_choices,
+            default=available_vehicles  # Select all by default
+        )
+    ]
+    
+    answers = inquirer.prompt(questions)
+    return answers['vehicles'] if answers else []
+
+def execute_launch_comparison(launches, start_time_input, end_time_input, show_figures, launch_folders):
     """Execute the launch comparison with the provided parameters."""
-    results_dir = os.path.join('.', 'results')
-    json_paths = [os.path.join(results_dir, folder, 'results.json') for folder in launches]
+    # Map selected display names back to json paths
+    selected_paths = []
+    display_to_path = {display_name: json_path for display_name, json_path in launch_folders}
+    
+    for display_name in launches:
+        if display_name in display_to_path:
+            selected_paths.append(display_to_path[display_name])
+        else:
+            logger.warning(f"Could not find path for launch: {display_name}")
+    
+    if len(selected_paths) < 2:
+        print("Error: Could not resolve paths for selected launches.")
+        return
+    
+    # Detect available vehicles in selected launches
+    available_vehicles = detect_available_vehicles(selected_paths)
+    
+    if not available_vehicles:
+        print("Error: Could not detect any vehicles in the selected launches.")
+        return
+    
+    # Let user select which vehicles to plot
+    selected_vehicles = prompt_for_vehicle_selection(available_vehicles)
+    
+    if not selected_vehicles:
+        print("No vehicles selected. Comparison cancelled.")
+        return
+    
     start_time = int(start_time_input) if start_time_input else 0
     end_time = int(end_time_input) if end_time_input else -1
     
     logger.debug(f"Comparing launches: {', '.join(launches)}")
+    logger.debug(f"Selected vehicles: {', '.join(selected_vehicles)}")
     logger.debug(f"Time window: {start_time} to {end_time}")
     
-    compare_multiple_launches(start_time, end_time, *json_paths, show_figures=show_figures)
+    compare_multiple_launches(start_time, end_time, *selected_paths, show_figures=show_figures, selected_vehicles=selected_vehicles)

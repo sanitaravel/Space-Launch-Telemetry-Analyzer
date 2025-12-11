@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "video_source": {
+    "type": "youtube",
+    "url": "https://www.youtube.com/watch?v=-1wcilQ58hI"
+  },
+  "time_unit": "frames",
+  "vehicles": [
+    "starship"
+  ],
+  "rois": [
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time",
+      "x": 849,
+      "y": 934,
+      "w": 226,
+      "h": 53,
+      "start_time": 81015,
+      "end_time": 88373,
+      "measurement_unit": "[+-]\\\\d{2}:\\\\d{2}:\\\\d{2}"
+    },
+    {
+      "id": "speed",
+      "vehicle": "superheavy",
+      "label": "Superheavy Speed",
+      "x": 341,
+      "y": 902,
+      "w": 106,
+      "h": 36,
+      "start_time": 81606,
+      "end_time": 88373,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "speed",
+      "vehicle": "starship",
+      "label": "Starship Speed",
+      "x": 344,
+      "y": 896,
+      "w": 100,
+      "h": 42,
+      "start_time": 81606,
+      "end_time": 88373,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "superheavy",
+      "label": "Superheavy Altitude",
+      "x": 352,
+      "y": 940,
+      "w": 95,
+      "h": 33,
+      "start_time": 81606,
+      "end_time": 88373,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "starship",
+      "label": "Starship Altitude",
+      "x": 353,
+      "y": 940,
+      "w": 91,
+      "h": 36,
+      "start_time": 81606,
+      "end_time": 88373,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "engines",
+      "vehicle": "superheavy",
+      "label": "Superheavy Engines",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 81658,
+      "end_time": 88373,
+      "measurement_unit": "",
+      "points": {
+        "inner_engines": [
+          [
+            110,
+            967
+          ],
+          [
+            120,
+            985
+          ],
+          [
+            103,
+            988
+          ]
+        ],
+        "middle_circle": [
+          [
+            106,
+            1016
+          ],
+          [
+            89,
+            1004
+          ],
+          [
+            77,
+            984
+          ],
+          [
+            85,
+            966
+          ],
+          [
+            101,
+            953
+          ],
+          [
+            118,
+            946
+          ],
+          [
+            135,
+            960
+          ],
+          [
+            147,
+            978
+          ],
+          [
+            141,
+            1001
+          ],
+          [
+            123,
+            1011
+          ]
+        ],
+        "outer_circle": [
+          [
+            107,
+            1040
+          ],
+          [
+            89,
+            1035
+          ],
+          [
+            77,
+            1026
+          ],
+          [
+            63,
+            1014
+          ],
+          [
+            57,
+            997
+          ],
+          [
+            59,
+            961
+          ],
+          [
+            53,
+            978
+          ],
+          [
+            68,
+            946
+          ],
+          [
+            80,
+            931
+          ],
+          [
+            95,
+            926
+          ],
+          [
+            113,
+            923
+          ],
+          [
+            133,
+            929
+          ],
+          [
+            148,
+            937
+          ],
+          [
+            162,
+            950
+          ],
+          [
+            167,
+            969
+          ],
+          [
+            171,
+            985
+          ],
+          [
+            164,
+            1004
+          ],
+          [
+            157,
+            1020
+          ],
+          [
+            142,
+            1031
+          ],
+          [
+            124,
+            1038
+          ]
+        ]
+      }
+    }
+  ]
+}

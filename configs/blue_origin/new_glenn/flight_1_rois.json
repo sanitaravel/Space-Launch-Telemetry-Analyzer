@@ -1,0 +1,131 @@
+{
+  "version": 3,
+  "video_source": {
+    "type": "youtube",
+    "url": "https://www.youtube.com/watch?v=KXysNxbGdCg"
+  },
+  "time_unit": "frames",
+  "vehicles": ["new_glenn", "second_stage"],
+  "rois": [
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time Display",
+      "y": 978,
+      "h": 50,
+      "x": 810,
+      "w": 298,
+      "start_time": 413496,
+      "end_time": 462836,
+      "measurement_unit": "[+-]\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "speed",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Speed",
+      "y": 978,
+      "h": 50,
+      "x": 243,
+      "w": 162,
+      "start_time": 413496,
+      "end_time": 441345,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude",
+      "y": 978,
+      "h": 50,
+      "x": 564,
+      "w": 162,
+      "start_time": 413496,
+      "end_time": 425786,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude",
+      "y": 978,
+      "h": 50,
+      "x": 564,
+      "w": 162,
+      "start_time": 425815,
+      "end_time": 437167,
+      "measurement_unit": "mi"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude",
+      "y": 978,
+      "h": 50,
+      "x": 564,
+      "w": 162,
+      "start_time": 437191,
+      "end_time": 441345,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Second Stage Speed",
+      "y": 978,
+      "h": 50,
+      "x": 243,
+      "w": 162,
+      "start_time": 413496,
+      "end_time": 424475,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Second Stage Altitude",
+      "y": 978,
+      "h": 50,
+      "x": 564,
+      "w": 162,
+      "start_time": 413496,
+      "end_time": 424475,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Second Stage Speed",
+      "y": 978,
+      "h": 50,
+      "x": 1244,
+      "w": 162,
+      "start_time": 424475,
+      "end_time": 462836,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Second Stage Altitude",
+      "y": 978,
+      "h": 50,
+      "x": 1549,
+      "w": 162,
+      "start_time": 424475,
+      "end_time": 425785,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Second Stage Altitude",
+      "y": 978,
+      "h": 50,
+      "x": 1549,
+      "w": 162,
+      "start_time": 425785,
+      "end_time": 462836,
+      "measurement_unit": "mi"
+    }
+  ]
+}
