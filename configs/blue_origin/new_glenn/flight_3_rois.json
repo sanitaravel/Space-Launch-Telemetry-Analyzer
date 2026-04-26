@@ -1,0 +1,134 @@
+{
+  "version": 3,
+  "video_source": {
+    "type": "youtube",
+    "url": "https://www.youtube.com/watch?v=enQ_IXtfm9I"
+  },
+  "time_unit": "frames",
+  "vehicles": [
+    "new_glenn",
+    "stage_2"
+  ],
+  "rois": [
+    {
+      "id": "speed",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Speed",
+      "x": 240,
+      "y": 973,
+      "w": 164,
+      "h": 60,
+      "start_time": 336758,
+      "end_time": 364388,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude (ascent)",
+      "x": 558,
+      "y": 964,
+      "w": 168,
+      "h": 77,
+      "start_time": 336758,
+      "end_time": 349457,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "time",
+      "x": 850,
+      "y": 969,
+      "w": 260,
+      "h": 72,
+      "start_time": 336758,
+      "end_time": 388746,
+      "measurement_unit": "[+-]\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "speed",
+      "vehicle": "stage_2",
+      "label": "Stage 2 Speed",
+      "x": 1236,
+      "y": 970,
+      "w": 173,
+      "h": 71,
+      "start_time": 348029,
+      "end_time": 364388,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "stage_2",
+      "label": "Stage 2 Altitude (ft)",
+      "x": 1546,
+      "y": 970,
+      "w": 167,
+      "h": 75,
+      "start_time": 348029,
+      "end_time": 349416,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "stage_2",
+      "label": "Stage 2 Altitude (mi)",
+      "x": 1544,
+      "y": 956,
+      "w": 171,
+      "h": 95,
+      "start_time": 349473,
+      "end_time": 364388,
+      "measurement_unit": "mi"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude (midflight)",
+      "x": 552,
+      "y": 966,
+      "w": 177,
+      "h": 78,
+      "start_time": 349500,
+      "end_time": 360737,
+      "measurement_unit": "mi"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "new_glenn",
+      "label": "New Glenn Altitude (descent)",
+      "x": 557,
+      "y": 952,
+      "w": 174,
+      "h": 101,
+      "start_time": 360776,
+      "end_time": 364388,
+      "measurement_unit": "ft"
+    },
+    {
+      "id": "speed",
+      "vehicle": "stage_2",
+      "label": "Stage 2 Speed (tel_back)",
+      "x": 1237,
+      "y": 966,
+      "w": 168,
+      "h": 88,
+      "start_time": 378378,
+      "end_time": 388746,
+      "measurement_unit": "mph"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "stage_2",
+      "label": "Stage 2 Altitude (tel_back)",
+      "x": 1543,
+      "y": 969,
+      "w": 174,
+      "h": 72,
+      "start_time": 378378,
+      "end_time": 388746,
+      "measurement_unit": "mi"
+    }
+  ]
+}
