@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from typing import Union
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from .data_processing import load_and_clean_data, compute_acceleration, compute_g_force, prepare_fuel_data_columns
 from .plot_utils import maximize_figure_window, beautify_vehicle_name
@@ -24,7 +25,7 @@ sns.set_theme(style="whitegrid", context="talk",
 
 
 def create_scatter_plot(df: pd.DataFrame, x: str, y: str, title: str, filename: str, label: str, 
-                        x_axis: str, y_axis: str, folder: str, launch_number: str, show_figures: bool) -> None:
+                        x_axis: str, y_axis: str, folder: str, launch_number: Union[str, int], show_figures: bool) -> None:
     """
     Create and save a scatter plot for the data using seaborn.
 
@@ -41,8 +42,20 @@ def create_scatter_plot(df: pd.DataFrame, x: str, y: str, title: str, filename: 
         launch_number (str): Launch number to include in the title
         show_figures (bool): Whether to display the figures.
     """
-    # Add launch number to the beginning of the title
-    title_with_launch = f"Launch {launch_number} - {title}"
+    # Format prefix depending on identifier type: legacy 'flight_N' or numeric -> 'Flight N', otherwise 'Mission <id>'
+    ident = str(launch_number)
+    if ident.startswith('flight_'):
+        try:
+            num = int(ident.split('_', 1)[1])
+            prefix = f"Flight {num}"
+        except Exception:
+            prefix = f"Mission {ident}"
+    elif ident.isdigit():
+        prefix = f"Flight {ident}"
+    else:
+        prefix = f"Mission {ident}"
+
+    title_with_launch = f"{prefix} - {title}"
     logger.info(f"Creating scatter plot: {title_with_launch}")
     
     # Create plots directory if it doesn't exist
@@ -125,10 +138,23 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
 
     # Create interactive viewer if showing figures
     launch_number = extract_launch_number(json_path)
+    # Format viewer title similar to plots
+    ident = str(launch_number)
+    if ident.startswith('flight_'):
+        try:
+            num = int(ident.split('_', 1)[1])
+            viewer_title_prefix = f"Flight {num}"
+        except Exception:
+            viewer_title_prefix = f"Mission {ident}"
+    elif ident.isdigit():
+        viewer_title_prefix = f"Flight {ident}"
+    else:
+        viewer_title_prefix = f"Mission {ident}"
+
     viewer = None
     if show_figures:
         from .interactive_viewer import show_plots_interactively
-        viewer = show_plots_interactively(f"Launch {launch_number} - Flight Data Visualization")
+        viewer = show_plots_interactively(f"{viewer_title_prefix} - Flight Data Visualization")
 
     # Filter data by time window
     original_count = len(df)
@@ -153,7 +179,7 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
     
     # Determine the folder name based on the launch number
     folder = os.path.dirname(json_path)
-    logger.info(f"Creating plots for launch {launch_number} in folder {folder}")
+    logger.info(f"Creating plots for mission {launch_number} in folder {folder}")
     
     # Create fuel level plots for available vehicles
     fuel_plot_count = 0
@@ -246,7 +272,7 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
             plot_count += 1
     
     logger.info(f"Created {plot_count} standard plots")
-    logger.info(f"Completed all plots for launch {launch_number}")
+    logger.info(f"Completed all plots for mission {launch_number}")
     
     # Show the interactive viewer if requested
     if show_figures and viewer:

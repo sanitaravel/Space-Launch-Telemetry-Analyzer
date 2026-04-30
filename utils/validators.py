@@ -67,3 +67,29 @@ def validate_url(_, current):
         return True
     else:
         raise errors.ValidationError('', reason='Please enter a valid YouTube or Twitter/X URL')
+
+
+def validate_launch_identifier(_, current):
+    """
+    Validate that input is a valid launch identifier (numeric or mission name).
+
+    Accepts digits or alphanumeric strings with spaces, underscores or hyphens.
+    """
+    import re
+
+    if current is None:
+        raise errors.ValidationError('', reason='Please enter a launch identifier')
+
+    val = current.strip()
+    if val == "":
+        raise errors.ValidationError('', reason='Please enter a launch identifier')
+
+    # Allow pure numbers (legacy behavior)
+    if val.isdigit():
+        return True
+
+    # Allow identifiers with letters, numbers, spaces, underscores and hyphens
+    if re.match(r'^[A-Za-z0-9_\- ]+$', val):
+        return True
+
+    raise errors.ValidationError('', reason='Use letters, numbers, spaces, underscores or hyphens only')

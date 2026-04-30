@@ -468,20 +468,20 @@ class ROIConfigurator(QMainWindow):
 
         # Parse config path to find video
         config_path = Path(self.config.config_path)
-        # config path like configs/provider/rocket/flight_number_rois.json
+        # config path like configs/provider/rocket/<mission>_rois.json
         parts = config_path.parts
         if len(parts) >= 4 and parts[0] == 'configs':
             provider = parts[1]
             rocket = parts[2]
             filename = parts[3]
-            # Extract flight_identifier from filename, e.g., flight_123_rois.json -> flight_123
-            flight_identifier = filename.replace('_rois.json', '')
+            # Extract mission identifier from filename, e.g., <mission>_rois.json -> <mission>
+            mission_identifier = filename.replace('_rois.json', '')
 
             video_dir = Path('flight_recordings') / provider / rocket
             if video_dir.exists():
-                # Look for video file
+                # Look for video file matching mission identifier
                 for ext in ['mp4', 'avi', 'mkv', 'webm']:
-                    video_file = video_dir / f"{flight_identifier}.{ext}"
+                    video_file = video_dir / f"{mission_identifier}.{ext}"
                     if video_file.exists():
                         self.load_video(str(video_file))
                         return

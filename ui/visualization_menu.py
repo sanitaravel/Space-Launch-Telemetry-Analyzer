@@ -32,7 +32,8 @@ def get_results_launches(provider, rocket):
         return []
     launches = []
     for launch_dir in rocket_path.iterdir():
-        if launch_dir.is_dir() and launch_dir.name.startswith('launch_'):
+        # Accept any subdirectory that contains a results.json file (supports mission names and legacy launch_N)
+        if launch_dir.is_dir():
             results_json = launch_dir / 'results.json'
             if results_json.exists():
                 launches.append((launch_dir.name, str(results_json)))

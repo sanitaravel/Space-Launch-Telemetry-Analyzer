@@ -3,7 +3,7 @@ Main processing functions for video analysis.
 """
 import cv2
 import multiprocessing
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 from utils.logger import get_logger
 from .validation import validate_video
 from .batch_processing import create_batches, process_video_frames, summarize_batch
@@ -13,7 +13,7 @@ from .results import calculate_real_times, save_results
 logger = get_logger(__name__)
 
 
-def iterate_through_frames(video_path: str, provider: str, vehicle_type: str, launch_number: int, display_rois: bool = False, debug: bool = False, 
+def iterate_through_frames(video_path: str, provider: str, vehicle_type: str, launch_identifier: Union[int, str], display_rois: bool = False, debug: bool = False, 
                           max_frames: Optional[int] = None, batch_size: int = 10, sample_rate: int = 1,
                           start_frame: Optional[int] = None, end_frame: Optional[int] = None) -> None:
     """
@@ -32,7 +32,7 @@ def iterate_through_frames(video_path: str, provider: str, vehicle_type: str, la
         start_frame (int, optional): Start frame number (overrides start_time if provided). Defaults to None.
         end_frame (int, optional): End frame number (overrides end_time if provided). Defaults to None.
     """
-    logger.info(f"Starting video processing for {provider}/{vehicle_type} launch {launch_number}")
+    logger.info(f"Starting video processing for {provider}/{vehicle_type} launch {launch_identifier}")
     logger.info(f"Video path: {video_path}, batch size: {batch_size}, sample rate: 1/{sample_rate}")
     
     if debug:
@@ -121,9 +121,9 @@ def iterate_through_frames(video_path: str, provider: str, vehicle_type: str, la
     logger.info(f"Time calculations complete.")
 
     # Save results
-    logger.debug(f"Saving results to {provider}/{vehicle_type}/launch_{launch_number}")
-    save_results(results, provider, vehicle_type, launch_number)
-    logger.info(f"Video processing for {provider}/{vehicle_type} launch {launch_number} completed successfully")
+    logger.debug(f"Saving results to {provider}/{vehicle_type}/{launch_identifier}")
+    save_results(results, provider, vehicle_type, launch_identifier)
+    logger.info(f"Video processing for {provider}/{vehicle_type} launch {launch_identifier} completed successfully")
 
 
 def process_frames(video_path, batch_size=30, start_time=None, end_time=None, start_frame=None, end_frame=None):

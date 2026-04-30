@@ -175,8 +175,9 @@ def compare_multiple_launches(start_time: int, end_time: int, *json_paths: str, 
             company_name = launch_info['company'].replace('_', ' ').title()
             rocket_name = launch_info['rocket'].replace('_', ' ').title()
             launch_number = launch_info['launch_number']
-            labels.append(f'{company_name} {rocket_name} Launch {launch_number}')
-            logger.info(f"Successfully processed {company_name} {rocket_name} Launch {launch_number}")
+            # Use mission identifier directly in the label (preserve folder name such as 'flight_1' or mission name)
+            labels.append(f'{company_name} {rocket_name} {launch_number}')
+            logger.info(f"Successfully processed {company_name} {rocket_name} {launch_number}")
         except Exception as e:
             logger.error(f"Error processing {json_path}: {str(e)}")
             import traceback
@@ -200,7 +201,7 @@ def compare_multiple_launches(start_time: int, end_time: int, *json_paths: str, 
     launch_nums = []
     for label in labels:
         parts = label.split()
-        if len(parts) >= 4:
+        if len(parts) >= 3:
             companies.add(parts[0])
             rockets.add(parts[1])
             launch_nums.append(parts[-1])
@@ -296,9 +297,9 @@ def compare_multiple_launches(start_time: int, end_time: int, *json_paths: str, 
                     
                     # Create a descriptive label
                     company_rocket = ' '.join(launch_label.split()[:2])  # "Blue Origin" or "Spacex Starship"
-                    launch_number = launch_label.split()[-1]  # Extract launch number
+                    launch_number = launch_label.split()[-1]  # Extract launch identifier
                     vehicle_display = vehicle_name.replace('_', ' ').title()
-                    data_label = f"{company_rocket} Launch {launch_number} {vehicle_display}"
+                    data_label = f"{company_rocket} {launch_number} {vehicle_display}"
                     
                     plot_data.append((df, col, data_label))
                     plot_labels.append(data_label)
@@ -403,9 +404,9 @@ def compare_multiple_launches(start_time: int, end_time: int, *json_paths: str, 
                         continue
                     
                     company_rocket = ' '.join(launch_label.split()[:2])
-                    launch_number = launch_label.split()[-1]  # Extract launch number
+                    launch_number = launch_label.split()[-1]  # Extract launch identifier
                     vehicle_display = vehicle_name.replace('_', ' ').title()
-                    data_label = f"{company_rocket} Launch {launch_number} {vehicle_display}"
+                    data_label = f"{company_rocket} {launch_number} {vehicle_display}"
                     
                     plot_data.append((df, col, data_label))
         

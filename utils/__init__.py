@@ -107,7 +107,8 @@ def extract_launch_number(json_path: str) -> str:
     Returns:
         str: The extracted launch number
     """
-    return os.path.basename(os.path.dirname(json_path)).split('_')[-1]
+    # Return the parent directory name as the mission identifier (preserves legacy 'flight_6')
+    return os.path.basename(os.path.dirname(json_path))
 
 
 def extract_launch_info(json_path: str) -> dict:
@@ -130,7 +131,8 @@ def extract_launch_info(json_path: str) -> dict:
         company = parts[results_idx + 1]
         rocket = parts[results_idx + 2]
         launch_dir = parts[results_idx + 3]
-        launch_number = launch_dir.split('_')[-1]
+        # Keep full launch/mission identifier (e.g., 'flight_6' or 'starship_test')
+        launch_number = launch_dir
         
         return {
             'company': company,
@@ -139,7 +141,7 @@ def extract_launch_info(json_path: str) -> dict:
         }
     except (IndexError, ValueError):
         # Fallback to old method if path structure doesn't match
-        launch_number = os.path.basename(os.path.dirname(json_path)).split('_')[-1]
+        launch_number = os.path.basename(os.path.dirname(json_path))
         return {
             'company': 'unknown',
             'rocket': 'unknown',
