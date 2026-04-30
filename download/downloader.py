@@ -30,8 +30,16 @@ def download_twitter_broadcast(url, flight_identifier, company=None, vehicle=Non
         # Ensure output directory exists
         os.makedirs(output_path, exist_ok=True)
         
-        # Define output template with flight identifier
-        output_template = f"{output_path}/{flight_identifier}.%(ext)s"
+        # Normalize flight_identifier/mission name for filename use
+        identifier = str(flight_identifier).strip()
+        # If user passed a numeric value, keep as-is; otherwise normalize spaces
+        if identifier.startswith('flight_'):
+            filename_base = identifier
+        else:
+            filename_base = identifier.replace(' ', '_')
+
+        # Define output template with mission identifier
+        output_template = f"{output_path}/{filename_base}.%(ext)s"
         
         logger.info(f"Downloading Twitter broadcast from {url}")
         logger.info(f"Output file will be saved as: {output_template}")
@@ -79,8 +87,15 @@ def download_youtube_video(url, flight_identifier, company=None, vehicle=None):
         # Ensure output directory exists
         os.makedirs(output_path, exist_ok=True)
         
-        # Define output template with flight identifier
-        output_template = f"{output_path}/{flight_identifier}.%(ext)s"
+        # Normalize flight_identifier/mission name for filename use
+        identifier = str(flight_identifier).strip()
+        if identifier.startswith('flight_'):
+            filename_base = identifier
+        else:
+            filename_base = identifier.replace(' ', '_')
+
+        # Define output template with mission identifier
+        output_template = f"{output_path}/{filename_base}.%(ext)s"
         
         logger.info(f"Downloading YouTube video from {url}")
         logger.info(f"Output file will be saved as: {output_template}")

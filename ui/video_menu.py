@@ -4,7 +4,7 @@ Video processing menu and related functionality.
 import inquirer
 from utils.logger import get_logger
 from utils.terminal import clear_screen
-from utils.validators import validate_number, validate_positive_number
+from utils.validators import validate_number, validate_positive_number, validate_launch_identifier
 from utils.video_utils import get_video_files_from_flight_recordings, display_video_info
 from processing import process_video_frame, iterate_through_frames
 from ocr.roi_manager import set_default_manager_config, get_default_manager
@@ -238,8 +238,7 @@ def select_video_file():
 def get_processing_parameters():
     """Get processing parameters from user."""
     questions = [
-        inquirer.Text('launch_number', message="Launch number",
-                    validate=validate_number),
+        inquirer.Text('launch_number', message="Launch identifier (mission name or numeric)", validate=validate_launch_identifier),
         inquirer.Text('batch_size', 
                      message="Batch size for processing (default: 10)", 
                      validate=validate_positive_number),
@@ -336,7 +335,7 @@ def process_video_with_parameters(video_path, launch_number, batch_size, sample_
             converted_end_frame = int(end_time * fps)
 
     iterate_through_frames(
-        video_path, provider, vehicle_type, int(launch_number), debug=DEBUG_MODE, 
+        video_path, provider, vehicle_type, launch_number, debug=DEBUG_MODE, 
         batch_size=batch_size, sample_rate=sample_rate,
         start_frame=converted_start_frame, end_frame=converted_end_frame)
 
@@ -414,15 +413,51 @@ def process_complete_video():
         if ends:
             config_end_frame = max(ends)
         # If config time unit is seconds, convert seconds->frames using video fps
+        from utils.video_utils import get_video_fps
+        fps = get_video_fps(video_path)
         if config_time_unit == 'seconds':
-            from utils.video_utils import get_video_fps
-            fps = get_video_fps(video_path)
             if fps:
                 if config_start_frame is not None:
                     config_start_frame = int(config_start_frame * fps)
                 if config_end_frame is not None:
                     config_end_frame = int(config_end_frame * fps)
+        try:
+            from processing.video_processing.validation import get_video_properties
+            total_frames, _ = get_video_properties(video_path)
+        except Exception:
+            total_frames = None
+
         logger.debug(f"Loaded ROI config: time_unit={config_time_unit}, start_frame={config_start_frame}, end_frame={config_end_frame}")
+
+        # If ROI config uses frame indices but they exceed the video length, prompt the user
+        if config_time_unit == 'frames' and total_frames is not None:
+            mismatch = False
+            if config_start_frame is not None and config_start_frame >= total_frames:
+                mismatch = True
+            if config_end_frame is not None and config_end_frame > total_frames:
+                mismatch = True
+
+            if mismatch:
+                print(f"Warning: ROI config frames ({config_start_frame} - {config_end_frame}) exceed video length ({total_frames} frames).")
+                choices = [
+                    f"Use clamped range ({max(0, min(config_start_frame, total_frames-1))} - {min(config_end_frame, total_frames) if config_end_frame is not None else total_frames})",
+                    'Process entire video instead',
+                    'Cancel processing'
+                ]
+                ans = inquirer.List('roi_mismatch', message='ROI frame range exceeds video length; choose action:', choices=choices)
+                resp = inquirer.prompt([ans])
+                if not resp or resp.get('roi_mismatch') == 'Cancel processing':
+                    input('\nPress Enter to continue...')
+                    clear_screen()
+                    return True
+                if resp.get('roi_mismatch') == 'Process entire video instead':
+                    config_start_frame = None
+                    config_end_frame = None
+                else:
+                    # Use clamped values
+                    config_start_frame = max(0, min(config_start_frame, max(0, total_frames - 1))) if config_start_frame is not None else None
+                    config_end_frame = max(config_start_frame or 0, min(config_end_frame if config_end_frame is not None else total_frames, total_frames))
+
         # Apply defaults only when user didn't supply any borders
         if start_frame is None and config_start_frame is not None:
             start_frame = config_start_frame
@@ -444,10 +479,24 @@ def process_complete_video():
         fps = get_video_fps(video_path)
         if fps:
             converted_end_frame = int(end_time * fps)
+    # Clamp and normalize using the actual video properties so logs match processing
+    try:
+        from processing.video_processing.validation import get_video_properties
+        total_frames, fps_prop = get_video_properties(video_path)
+        # Determine displayable frame bounds
+        disp_start = 0 if converted_start_frame is None else converted_start_frame
+        disp_end = total_frames if converted_end_frame is None else converted_end_frame
+        # Clamp to valid ranges
+        disp_start = max(0, min(disp_start, max(0, total_frames - 1)))
+        disp_end = max(disp_start, min(disp_end, total_frames))
+        converted_start_frame = disp_start
+        converted_end_frame = disp_end
+    except Exception:
+        logger.exception("Failed to determine video properties for frame clamping")
 
     logger.info(f"Using frames: {converted_start_frame} - {converted_end_frame}")
     iterate_through_frames(
-        video_path, provider, vehicle_type, int(answers['launch_number']), debug=DEBUG_MODE,
+        video_path, provider, vehicle_type, answers['launch_number'], debug=DEBUG_MODE,
         batch_size=batch_size, sample_rate=sample_rate,
         start_frame=converted_start_frame, end_frame=converted_end_frame
     )

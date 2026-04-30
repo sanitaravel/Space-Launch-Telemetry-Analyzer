@@ -137,17 +137,37 @@ def get_available_flights_for_vehicle(flight_data, company, vehicle):
     for unique_key, info in flight_data.items():
         if info["company"] == company and info["vehicle"] == vehicle:
             try:
-                flight_num = int(info["flight_key"].split("_")[1])
-                if flight_num not in downloaded_flights:
-                    flight_type = "YouTube" if info["type"] == "youtube" else "Twitter/X"
-                    label = f"Flight {flight_num} ({flight_type})"
-                    available_flights.append((label, unique_key))
-            except (IndexError, ValueError, KeyError):
+                mission_key = info["flight_key"]
+                # Support legacy numeric downloaded list (ints) and new mission-name strings
+                already_downloaded = False
+                if isinstance(mission_key, str) and mission_key.startswith("flight_"):
+                    # legacy-style key like 'flight_6' -> compare by numeric id if possible
+                    try:
+                        num = int(mission_key.split("_")[1])
+                        if num in downloaded_flights:
+                            already_downloaded = True
+                    except (IndexError, ValueError):
+                        # fall back to string membership check
+                        if mission_key in downloaded_flights:
+                            already_downloaded = True
+                else:
+                    if mission_key in downloaded_flights:
+                        already_downloaded = True
+
+                if already_downloaded:
+                    continue
+
+                flight_type = "YouTube" if info.get("type") == "youtube" else "Twitter/X"
+                # Display mission name as-is (prettified for humans)
+                pretty = mission_key.replace('_', ' ')
+                label = f"{pretty} ({flight_type})"
+                available_flights.append((label, unique_key))
+            except KeyError:
                 logger.warning(f"Skipping malformed flight entry: {unique_key}")
                 continue
     
-    # Sort by flight number
-    available_flights.sort(key=lambda x: int(x[1].split("flight_")[1]))
+    # Sort by mission name (human-friendly label)
+    available_flights.sort(key=lambda x: x[0].lower())
     return available_flights
 
 def display_flight_selection_menu(choices):
@@ -368,12 +388,12 @@ def select_platform():
     return prompt_menu_options("Select platform to download from", platform_choices)
 
 def get_url_and_flight_number(platform):
-    """Prompt for URL and flight number."""
+    """Prompt for URL and mission name (previously 'flight number')."""
     questions = [
         inquirer.Text('url', message=f"Enter the {platform} URL", 
                      validate=validate_url),
-        inquirer.Text('flight_number', message="Enter the flight number", 
-                     validate=validate_number)
+        inquirer.Text('mission_name', message="Enter the mission name (e.g. starship_test_flight)", 
+                     validate=lambda _, x: len(x.strip()) > 0)
     ]
     
     answers = inquirer.prompt(questions)
@@ -381,11 +401,14 @@ def get_url_and_flight_number(platform):
     if not answers or not answers['url'].strip():
         return None, None
     
-    return answers['url'].strip(), int(answers['flight_number'])
+    # Return the URL and the mission identifier as a string
+    return answers['url'].strip(), answers['mission_name'].strip().lower().replace(' ', '_')
 
 def download_from_platform(platform, url, flight_number, company=None, vehicle=None):
     """Execute download based on selected platform."""
-    flight_identifier = f"flight_{flight_number}"
+    # `flight_number` may be a legacy numeric value or a mission-name string.
+    # Use it directly as the filename identifier (mission name). Keep legacy callers working.
+    flight_identifier = str(flight_number)
     if platform == 'Twitter/X Broadcast':
         return download_twitter_broadcast(url, flight_identifier, company, vehicle)
     elif platform == 'YouTube Video':

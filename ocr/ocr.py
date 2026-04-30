@@ -181,7 +181,7 @@ def extract_values_from_roi(roi: np.ndarray, mode: str = "data", display_transfo
             logger.debug(f"Extracted altitude value: {altitude}")
         return {"value": altitude}
     elif mode == "time":
-        time = extract_time(text, regex or r'[+-]\d{2}:\d{2}:\d{2}')
+        time = extract_time(text, regex if regex != None and regex != '' else r'[+-]\d{2}:\d{2}:\d{2}')
         if debug:
             if time:
                 logger.debug(f"Extracted time: {time['sign']} {time.get('hours', 0):02}:{time.get('minutes', 0):02}:{time.get('seconds', 0):02}")

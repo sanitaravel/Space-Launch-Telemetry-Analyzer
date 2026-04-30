@@ -133,9 +133,9 @@ _default_manager: Optional[ROIManager] = None
 def get_default_manager() -> ROIManager:
     global _default_manager
     if _default_manager is None:
-        # Update to load a specific config, e.g., for SpaceX Starship
-        config_path = "configs/spacex/starship/flight_6_rois.json"  # Or make dynamic
-        _default_manager = ROIManager(config_path)
+        # Use the repository default ROIs unless explicitly set via
+        # `set_default_manager_config(config_path)` — avoid hard-coded flight_ identifiers.
+        _default_manager = ROIManager()
     return _default_manager
 
 

@@ -3,7 +3,7 @@ Functions for handling video processing results.
 """
 import os
 import json
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -49,17 +49,31 @@ def calculate_real_times(results: List[Dict], zero_time_frame: Optional[int], fp
     return results
 
 
-def save_results(results: List[Dict], provider: str, vehicle_type: str, launch_number: int) -> None:
+def save_results(results: List[Dict], provider: str, vehicle_type: str, launch_identifier: Union[int, str]) -> None:
     """
-    Save the processing results to a file.
+    Save the processing results to a file using a mission/launch identifier.
 
     Args:
         results (List[Dict]): The processing results.
         provider (str): The launch provider (e.g., 'spacex').
         vehicle_type (str): The vehicle type (e.g., 'starship').
-        launch_number (int): The launch number for saving results.
+        launch_identifier (int|str): The legacy numeric launch number or a mission identifier string.
+            - If an int (or a numeric string) the folder will be `launch_<n>` for backward compatibility.
+            - Otherwise the identifier string is used as the folder name (normalized).
     """
-    folder_name = os.path.join("results", provider, vehicle_type, f"launch_{launch_number}")
+    # Determine destination folder while preserving legacy numeric behavior
+    if isinstance(launch_identifier, int):
+        folder_name = os.path.join("results", provider, vehicle_type, f"launch_{launch_identifier}")
+    else:
+        ident = str(launch_identifier)
+        # If ident is purely numeric, treat it as legacy launch number
+        if ident.isdigit():
+            folder_name = os.path.join("results", provider, vehicle_type, f"launch_{ident}")
+        else:
+            # Normalize spaces -> underscores to create safe folder names
+            safe_ident = ident.replace(' ', '_')
+            folder_name = os.path.join("results", provider, vehicle_type, safe_ident)
+    
     os.makedirs(folder_name, exist_ok=True)
 
     result_path = os.path.join(folder_name, "results.json")
@@ -69,10 +83,11 @@ def save_results(results: List[Dict], provider: str, vehicle_type: str, launch_n
         logger.info(f"Results saved to {result_path}")
     except Exception as e:
         logger.error(f"Error saving results: {str(e)}")
-        
-        # Try to save to a backup location
-        backup_path = os.path.join("results", f"backup_results_{provider}_{vehicle_type}_{launch_number}.json")
+
+        # Try to save to a backup location using a safe identifier
         try:
+            safe_ident = str(launch_identifier).replace(' ', '_')
+            backup_path = os.path.join("results", f"backup_results_{provider}_{vehicle_type}_{safe_ident}.json")
             with open(backup_path, "w") as f:
                 json.dump(results, f, indent=4)
             logger.info(f"Results saved to backup location: {backup_path}")

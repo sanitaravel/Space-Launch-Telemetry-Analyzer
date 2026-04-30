@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from .plot_utils import maximize_figure_window
+from typing import Union
 from utils.constants import FUEL_LEVEL_PLOT_PARAMS, FIGURE_SIZE, TITLE_FONT_SIZE, LABEL_FONT_SIZE, LEGEND_FONT_SIZE, TICK_FONT_SIZE, MARKER_SIZE, LINE_WIDTH, LINE_ALPHA
 from utils.logger import get_logger
 
@@ -12,7 +13,7 @@ logger = get_logger(__name__)
 
 def create_fuel_level_plot(df: pd.DataFrame, x: str, y_cols: list, title: str, filename: str, 
                            labels: list, x_axis: str, y_axis: str, folder: str, 
-                           launch_number: str, show_figures: bool) -> None:
+                           launch_number: Union[str, int], show_figures: bool) -> None:
     """
     Create and save a fuel level plot showing multiple fuel types (LOX and CH4) over time.
 
@@ -29,7 +30,20 @@ def create_fuel_level_plot(df: pd.DataFrame, x: str, y_cols: list, title: str, f
         launch_number (str): Launch number to include in the title.
         show_figures (bool): Whether to display the figures.
     """
-    title_with_launch = f"Launch {launch_number} - {title}"
+    # Format prefix depending on identifier type: legacy 'flight_N' -> 'Flight N', numeric -> 'Flight N', otherwise 'Mission <id>'
+    ident = str(launch_number)
+    if ident.startswith('flight_'):
+        try:
+            num = int(ident.split('_', 1)[1])
+            prefix = f"Flight {num}"
+        except Exception:
+            prefix = f"Mission {ident}"
+    elif ident.isdigit():
+        prefix = f"Flight {ident}"
+    else:
+        prefix = f"Mission {ident}"
+
+    title_with_launch = f"{prefix} - {title}"
     logger.info(f"Creating fuel level plot: {title_with_launch}")
     
     # Create plots directory if it doesn't exist

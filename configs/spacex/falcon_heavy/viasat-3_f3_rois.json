@@ -1,0 +1,832 @@
+{
+  "version": 7,
+  "video_source": {
+    "type": "twitter/x",
+    "url": "https://x.com/i/broadcasts/1NGaradEpARJj"
+  },
+  "time_unit": "frames",
+  "vehicles": [
+    "core_booster",
+    "second_stage",
+    "side_booster_1",
+    "side_booster_2"
+  ],
+  "rois": [
+    {
+      "id": "speed",
+      "vehicle": "side_booster_1",
+      "label": "Speed Sidebooster 1 Ascent",
+      "x": 98,
+      "y": 961,
+      "w": 112,
+      "h": 50,
+      "start_time": 34264,
+      "end_time": 38699,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "speed",
+      "vehicle": "side_booster_2",
+      "label": "Speed Sidebooster 2 Ascent",
+      "x": 98,
+      "y": 961,
+      "w": 111,
+      "h": 47,
+      "start_time": 34264,
+      "end_time": 38699,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "speed",
+      "vehicle": "core_booster",
+      "label": "Speed Core Booster Ascent",
+      "x": 97,
+      "y": 959,
+      "w": 112,
+      "h": 52,
+      "start_time": 34264,
+      "end_time": 41395,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage Ascent",
+      "x": 96,
+      "y": 959,
+      "w": 115,
+      "h": 51,
+      "start_time": 34264,
+      "end_time": 41395,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "side_booster_1",
+      "label": "Altitude Sidebooster 1 Ascent",
+      "x": 259,
+      "y": 965,
+      "w": 120,
+      "h": 45,
+      "start_time": 34264,
+      "end_time": 38699,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "side_booster_2",
+      "label": "Altitude Sidebooster 2 Ascent",
+      "x": 259,
+      "y": 964,
+      "w": 121,
+      "h": 44,
+      "start_time": 34264,
+      "end_time": 38699,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "core_booster",
+      "label": "Altitude Core Booster Ascent",
+      "x": 258,
+      "y": 965,
+      "w": 120,
+      "h": 44,
+      "start_time": 34264,
+      "end_time": 41395,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage Ascent",
+      "x": 257,
+      "y": 964,
+      "w": 119,
+      "h": 44,
+      "start_time": 34264,
+      "end_time": 41395,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "engines",
+      "vehicle": "side_booster_1",
+      "label": "Engines Sidebooster 1 Ascent",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 34264,
+      "end_time": 38699,
+      "measurement_unit": "",
+      "points": {
+        "outer_engines": [
+          [
+            1474,
+            956
+          ],
+          [
+            1503,
+            958
+          ],
+          [
+            1520,
+            973
+          ],
+          [
+            1522,
+            1002
+          ],
+          [
+            1505,
+            1019
+          ],
+          [
+            1479,
+            1022
+          ],
+          [
+            1456,
+            1001
+          ],
+          [
+            1462,
+            973
+          ]
+        ],
+        "center_engine": [
+          [
+            1488,
+            990
+          ]
+        ]
+      }
+    },
+    {
+      "id": "engines",
+      "vehicle": "side_booster_2",
+      "label": "Engines Sidebooster 2 Ascent",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 34264,
+      "end_time": 38699,
+      "measurement_unit": "",
+      "points": {
+        "outer_engines": [
+          [
+            1788,
+            957
+          ],
+          [
+            1815,
+            954
+          ],
+          [
+            1830,
+            975
+          ],
+          [
+            1833,
+            1001
+          ],
+          [
+            1814,
+            1022
+          ],
+          [
+            1786,
+            1021
+          ],
+          [
+            1768,
+            1003
+          ],
+          [
+            1771,
+            975
+          ]
+        ],
+        "center_engine": [
+          [
+            1802,
+            988
+          ]
+        ]
+      }
+    },
+    {
+      "id": "engines",
+      "vehicle": "core_booster",
+      "label": "Engines Core Booster Ascent",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 34264,
+      "end_time": 38699,
+      "measurement_unit": "",
+      "points": {
+        "outer_engines": [
+          [
+            1632,
+            958
+          ],
+          [
+            1659,
+            957
+          ],
+          [
+            1676,
+            977
+          ],
+          [
+            1679,
+            1002
+          ],
+          [
+            1659,
+            1024
+          ],
+          [
+            1634,
+            1022
+          ],
+          [
+            1615,
+            1001
+          ],
+          [
+            1611,
+            977
+          ]
+        ],
+        "center_engine": [
+          [
+            1645,
+            987
+          ]
+        ]
+      }
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time Pre-Landing",
+      "x": 870,
+      "y": 962,
+      "w": 220,
+      "h": 52,
+      "start_time": 34264,
+      "end_time": 49007,
+      "measurement_unit": "\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "engines",
+      "vehicle": "core_booster",
+      "label": "Engines Core Booster Post-BECO",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 38755,
+      "end_time": 41392,
+      "measurement_unit": "",
+      "points": {
+        "outer_engines": [
+          [
+            1752,
+            958
+          ],
+          [
+            1777,
+            956
+          ],
+          [
+            1795,
+            977
+          ],
+          [
+            1798,
+            1002
+          ],
+          [
+            1776,
+            1021
+          ],
+          [
+            1751,
+            1021
+          ],
+          [
+            1733,
+            1002
+          ],
+          [
+            1732,
+            977
+          ]
+        ],
+        "main_engine": [
+          [
+            1765,
+            989
+          ]
+        ]
+      }
+    },
+    {
+      "id": "speed",
+      "vehicle": "side_booster_1",
+      "label": "Speed Sidebooster 1 Post-BECO",
+      "x": 104,
+      "y": 965,
+      "w": 98,
+      "h": 43,
+      "start_time": 41440,
+      "end_time": 47832,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "speed",
+      "vehicle": "side_booster_2",
+      "label": "Speed Sidebooster 2 Post-BECO",
+      "x": 103,
+      "y": 964,
+      "w": 98,
+      "h": 42,
+      "start_time": 41440,
+      "end_time": 47832,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "side_booster_1",
+      "label": "Altitude Sidebooster 1 Post-BECO",
+      "x": 264,
+      "y": 963,
+      "w": 111,
+      "h": 47,
+      "start_time": 41440,
+      "end_time": 48992,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage Post-MECO",
+      "x": 1539,
+      "y": 964,
+      "w": 119,
+      "h": 45,
+      "start_time": 41440,
+      "end_time": 47840,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "engines",
+      "vehicle": "second_stage",
+      "label": "Engines Second Stage Post-MECO",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 41440,
+      "end_time": 41722,
+      "measurement_unit": "",
+      "points": {
+        "main_engine": [
+          [
+            1765,
+            990
+          ]
+        ]
+      }
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage Post-MECO",
+      "x": 1710,
+      "y": 964,
+      "w": 113,
+      "h": 46,
+      "start_time": 41779,
+      "end_time": 47840,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "side_booster_2",
+      "label": "Altitude Sidebooster 2 Landing",
+      "x": 1545,
+      "y": 967,
+      "w": 113,
+      "h": 40,
+      "start_time": 47884,
+      "end_time": 48992,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "engines",
+      "vehicle": "side_booster_1",
+      "label": "Engines Sidebooster 1 Landing",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 47884,
+      "end_time": 48992,
+      "measurement_unit": "",
+      "points": {
+        "outer_engines": [
+          [
+            141,
+            957
+          ],
+          [
+            168,
+            958
+          ],
+          [
+            187,
+            977
+          ],
+          [
+            187,
+            1002
+          ],
+          [
+            167,
+            1022
+          ],
+          [
+            141,
+            1022
+          ],
+          [
+            122,
+            1001
+          ],
+          [
+            122,
+            976
+          ]
+        ],
+        "main_engine": [
+          [
+            156,
+            990
+          ]
+        ]
+      }
+    },
+    {
+      "id": "engines",
+      "vehicle": "side_booster_2",
+      "label": "Engines Sidebooster 2 Landing",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 47884,
+      "end_time": 48992,
+      "measurement_unit": "",
+      "points": {
+        "outer_engines": [
+          [
+            1751,
+            958
+          ],
+          [
+            1777,
+            957
+          ],
+          [
+            1797,
+            975
+          ],
+          [
+            1797,
+            1003
+          ],
+          [
+            1777,
+            1021
+          ],
+          [
+            1752,
+            1021
+          ],
+          [
+            1732,
+            1002
+          ],
+          [
+            1732,
+            977
+          ]
+        ],
+        "main_engine": [
+          [
+            1764,
+            990
+          ]
+        ]
+      }
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time Post-Landing",
+      "x": 875,
+      "y": 962,
+      "w": 220,
+      "h": 49,
+      "start_time": 49088,
+      "end_time": 78667,
+      "measurement_unit": "\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage Post-Landing",
+      "x": 598,
+      "y": 968,
+      "w": 123,
+      "h": 40,
+      "start_time": 49088,
+      "end_time": 78667,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage Post-Landing",
+      "x": 1200,
+      "y": 969,
+      "w": 113,
+      "h": 37,
+      "start_time": 49088,
+      "end_time": 78667,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time SES-2",
+      "x": 870,
+      "y": 962,
+      "w": 220,
+      "h": 48,
+      "start_time": 78732,
+      "end_time": 85065,
+      "measurement_unit": "\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage SES-2",
+      "x": 94,
+      "y": 969,
+      "w": 120,
+      "h": 40,
+      "start_time": 78732,
+      "end_time": 85065,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage SES-2",
+      "x": 261,
+      "y": 965,
+      "w": 114,
+      "h": 41,
+      "start_time": 78732,
+      "end_time": 85065,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "engines",
+      "vehicle": "second_stage",
+      "label": "Engines Second Stage SES-2",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 78732,
+      "end_time": 85065,
+      "measurement_unit": "",
+      "points": {
+        "main_engine": [
+          [
+            1764,
+            990
+          ]
+        ]
+      }
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage Post-SES-2",
+      "x": 596,
+      "y": 968,
+      "w": 126,
+      "h": 37,
+      "start_time": 85163,
+      "end_time": 504472,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time Post-SES-2",
+      "x": 870,
+      "y": 965,
+      "w": 220,
+      "h": 46,
+      "start_time": 85163,
+      "end_time": 504472,
+      "measurement_unit": "\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage Post-SES-2",
+      "x": 1191,
+      "y": 968,
+      "w": 129,
+      "h": 37,
+      "start_time": 85163,
+      "end_time": 504472,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage SES-3",
+      "x": 96,
+      "y": 965,
+      "w": 119,
+      "h": 43,
+      "start_time": 504540,
+      "end_time": 559868,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage SES-3",
+      "x": 261,
+      "y": 967,
+      "w": 119,
+      "h": 40,
+      "start_time": 504540,
+      "end_time": 559868,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time SES-3",
+      "x": 870,
+      "y": 966,
+      "w": 220,
+      "h": 46,
+      "start_time": 504540,
+      "end_time": 559868,
+      "measurement_unit": "\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "engines",
+      "vehicle": "second_stage",
+      "label": "Engines Second Stage SES-3",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 504540,
+      "end_time": 556263,
+      "measurement_unit": "",
+      "points": {
+        "main_engine": [
+          [
+            1765,
+            990
+          ]
+        ]
+      }
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage Post-SES-3",
+      "x": 615,
+      "y": 968,
+      "w": 92,
+      "h": 38,
+      "start_time": 559974,
+      "end_time": 562214,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time Post-SES-3",
+      "x": 870,
+      "y": 963,
+      "w": 220,
+      "h": 50,
+      "start_time": 559974,
+      "end_time": 562214,
+      "measurement_unit": "\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage Post-SES-3",
+      "x": 1186,
+      "y": 968,
+      "w": 138,
+      "h": 38,
+      "start_time": 559974,
+      "end_time": 562214,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage Pre-deploy",
+      "x": 103,
+      "y": 969,
+      "w": 98,
+      "h": 39,
+      "start_time": 562287,
+      "end_time": 570231,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage Pre-deploy",
+      "x": 261,
+      "y": 968,
+      "w": 118,
+      "h": 37,
+      "start_time": 562287,
+      "end_time": 570231,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time Pre-deploy",
+      "x": 870,
+      "y": 965,
+      "w": 220,
+      "h": 46,
+      "start_time": 562287,
+      "end_time": 570231,
+      "measurement_unit": "\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "speed",
+      "vehicle": "second_stage",
+      "label": "Speed Second Stage Post-deploy",
+      "x": 619,
+      "y": 968,
+      "w": 87,
+      "h": 37,
+      "start_time": 570327,
+      "end_time": 572670,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time Post-deploy",
+      "x": 870,
+      "y": 965,
+      "w": 220,
+      "h": 47,
+      "start_time": 570327,
+      "end_time": 572670,
+      "measurement_unit": "\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "second_stage",
+      "label": "Altitude Second Stage Post-deploy",
+      "x": 1194,
+      "y": 969,
+      "w": 123,
+      "h": 35,
+      "start_time": 570327,
+      "end_time": 572670,
+      "measurement_unit": "km"
+    }
+  ]
+}

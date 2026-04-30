@@ -122,17 +122,18 @@ def select_or_create_rocket(provider):
     return rocket
 
 def get_launch_number():
-    """Prompt user for launch number."""
+    """Prompt user for mission name (replaces numeric launch number)."""
     questions = [
         inquirer.Text(
-            'launch_number',
-            message="Enter launch number:",
-            validate=lambda _, x: x.strip() != "" and validate_number(_, x),
+            'mission_name',
+            message="Enter mission name (e.g. starship_test_flight):",
+            validate=lambda _, x: x.strip() != "",
         ),
     ]
 
     answers = inquirer.prompt(questions)
-    return int(answers['launch_number'])
+    # Normalize to internal format
+    return answers['mission_name'].strip().lower().replace(' ', '_')
 
 def get_video_source():
     """Prompt user for video source type and URL."""
@@ -193,8 +194,8 @@ def save_config_file(provider, rocket, launch_number, config_data):
     config_dir = Path('configs') / provider / rocket
     config_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create filename
-    filename = f"flight_{launch_number}_rois.json"
+    # Create filename using mission name (legacy 'flight_' prefix is no longer added)
+    filename = f"{launch_number}_rois.json"
     config_path = config_dir / filename
 
     # Save the config
@@ -219,7 +220,8 @@ def offer_to_download_video():
 
 def download_video(url, launch_number, provider, rocket, video_type):
     """Download the video using the appropriate downloader."""
-    flight_identifier = f"flight_{launch_number}"
+    # `launch_number` is now a mission identifier string; use directly
+    flight_identifier = str(launch_number)
 
     # Determine platform from type
     if video_type == "youtube":

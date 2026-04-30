@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from .plot_utils import maximize_figure_window, beautify_vehicle_name
+from typing import Union
 from utils.constants import (ENGINE_TIMELINE_PARAMS, ENGINE_PERFORMANCE_PARAMS,
                       FIGURE_SIZE, TITLE_FONT_SIZE, SUBTITLE_FONT_SIZE, LABEL_FONT_SIZE, 
                       LEGEND_FONT_SIZE, TICK_FONT_SIZE, MARKER_SIZE, MARKER_ALPHA, 
@@ -13,7 +14,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch_number: str, show_figures: bool = True):
+def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch_number: Union[str, int], show_figures: bool = True):
     """
     Create a plot for a specific vehicle's engine activity.
 
@@ -31,7 +32,20 @@ def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch
         logger.debug(f"No engine activity columns found for {vehicle}")
         return
     
-    title = f"Launch {launch_number} - {beautify_vehicle_name(vehicle)} Engine Activity"
+    # Format title prefix for mission-friendly naming
+    ident = str(launch_number)
+    if ident.startswith('flight_'):
+        try:
+            num = int(ident.split('_', 1)[1])
+            prefix = f"Flight {num}"
+        except Exception:
+            prefix = f"Mission {ident}"
+    elif ident.isdigit():
+        prefix = f"Flight {ident}"
+    else:
+        prefix = f"Mission {ident}"
+
+    title = f"{prefix} - {beautify_vehicle_name(vehicle)} Engine Activity"
     logger.info(f"Creating engine plot: {title}")
 
     # Create figure (fullscreen)
@@ -85,7 +99,7 @@ def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch
         plt.close(fig)
 
 
-def create_engine_timeline_plot(df: pd.DataFrame, folder: str, launch_number: str, show_figures: bool = True):
+def create_engine_timeline_plot(df: pd.DataFrame, folder: str, launch_number: Union[str, int], show_figures: bool = True):
     """
     Create engine activity plots for all detected vehicles.
 
@@ -95,7 +109,7 @@ def create_engine_timeline_plot(df: pd.DataFrame, folder: str, launch_number: st
         launch_number (str): Launch number to include in the title
         show_figures (bool): Whether to display the figures
     """
-    logger.info(f"Creating engine timeline plots for Launch {launch_number}")
+    logger.info(f"Creating engine timeline plots for {launch_number}")
 
     # Detect vehicles with engine data
     from .data_processing import detect_vehicles
@@ -117,7 +131,7 @@ def create_engine_timeline_plot(df: pd.DataFrame, folder: str, launch_number: st
         create_engine_group_plot(df, vehicle, folder, launch_number, show_figures)
 
 
-def create_engine_performance_correlation(df: pd.DataFrame, vehicle: str, folder: str, launch_number: str, show_figures: bool = True) -> None:
+def create_engine_performance_correlation(df: pd.DataFrame, vehicle: str, folder: str, launch_number: Union[str, int], show_figures: bool = True) -> None:
     """
     Create a plot showing correlation between engine activity and vehicle performance.
 
@@ -143,7 +157,20 @@ def create_engine_performance_correlation(df: pd.DataFrame, vehicle: str, folder
     else:
         color_col = engine_cols[0]
     
-    title_with_launch = f"Launch {launch_number} - {beautify_vehicle_name(vehicle)} Velocity vs Engine Activity"
+    # Format prefix similar to other plots
+    ident = str(launch_number)
+    if ident.startswith('flight_'):
+        try:
+            num = int(ident.split('_', 1)[1])
+            prefix = f"Flight {num}"
+        except Exception:
+            prefix = f"Mission {ident}"
+    elif ident.isdigit():
+        prefix = f"Flight {ident}"
+    else:
+        prefix = f"Mission {ident}"
+
+    title_with_launch = f"{prefix} - {beautify_vehicle_name(vehicle)} Velocity vs Engine Activity"
     logger.info(f"Creating engine performance correlation plot: {title_with_launch}")
 
     # Create figure (fullscreen)

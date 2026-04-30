@@ -40,8 +40,8 @@ def get_launch_data():
                             logger.warning(f"No video_source found in {file_path}")
                             continue
                         
-                        # Parse the path to get company, vehicle, flight
-                        # Path format: configs/company/vehicle/flight_rois.json
+                        # Parse the path to get company, vehicle, mission file
+                        # Path format: configs/company/vehicle/<mission>_rois.json
                         rel_path = os.path.relpath(file_path, configs_path)
                         path_parts = rel_path.split(os.sep)
                         
@@ -50,7 +50,7 @@ def get_launch_data():
                             continue
                         
                         company, vehicle, flight_file = path_parts
-                        # flight_file is like "flight_10_rois.json"
+                        # flight_file is like "<mission>_rois.json" (previously flight_10_rois.json)
                         flight_key = flight_file.replace("_rois.json", "")
                         
                         # Initialize nested structure
@@ -81,28 +81,38 @@ def get_launch_data():
 
 def get_downloaded_launches(output_path="flight_recordings"):
     """
-    Get a list of already downloaded flight numbers.
-    
+    Get a list of already downloaded mission identifiers.
+
     Args:
         output_path (str): Path to check for downloaded files
-        
+
     Returns:
-        list: List of downloaded flight numbers as integers
+        list: List of downloaded identifiers. Each item is either an int (legacy
+              numeric flight number) or a string mission identifier.
     """
-    downloaded = []
-    
+    downloaded = set()
+
     if not os.path.exists(output_path):
-        return downloaded
-    
-    # Check for files matching the pattern "flight_X.*"
-    for file in os.listdir(output_path):
-        if file.startswith("flight_"):
-            try:
-                # Extract the flight number from the filename
-                flight_num = int(file.split("_")[1].split(".")[0])
-                downloaded.append(flight_num)
-            except (IndexError, ValueError):
-                continue
-    
-    logger.debug(f"Found already downloaded flights: {downloaded}")
-    return downloaded
+        return []
+
+    # Walk recursively to find downloaded files in nested company/vehicle dirs
+    for root, dirs, files in os.walk(output_path):
+        for file in files:
+            name, _ = os.path.splitext(file)
+            # If name starts with legacy 'flight_' try to parse numeric id
+            if name.startswith("flight_"):
+                parts = name.split("_", 1)
+                if len(parts) > 1:
+                    suffix = parts[1]
+                    try:
+                        downloaded.add(int(suffix))
+                        continue
+                    except ValueError:
+                        # not numeric, fall through to add string
+                        pass
+            # For non-legacy or non-numeric names, add the base name as string
+            downloaded.add(name)
+
+    downloaded_list = list(downloaded)
+    logger.debug(f"Found already downloaded flights/missions: {downloaded_list}")
+    return downloaded_list
