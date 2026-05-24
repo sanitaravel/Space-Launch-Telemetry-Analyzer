@@ -146,6 +146,8 @@ def visualize_flight_data():
             'start_time', message="Start time in seconds (default: 0)", validate=validate_number),
         inquirer.Text(
             'end_time', message="End time in seconds (default: -1 for all data)", validate=validate_number),
+        inquirer.Text(
+            'events', message="Event times (hh:mm:ss) comma-separated (optional)"),
         inquirer.Confirm(
             'show_figures', message="Display figures interactively?", default=True)
     ]
@@ -154,8 +156,15 @@ def visualize_flight_data():
     start_time = int(answers['start_time']) if answers['start_time'] else 0
     end_time = int(answers['end_time']) if answers['end_time'] else -1
     
-    logger.debug(f"Visualizing flight data from {json_path} with time window {start_time} to {end_time}")
-    plot_flight_data(json_path, start_time, end_time, show_figures=answers['show_figures'])
+    # Parse optional event times (hh:mm:ss) into list of strings
+    events_input = answers.get('events') if answers else None
+    events = []
+    if events_input:
+        # allow comma-separated list, ignore empty entries
+        events = [e.strip() for e in events_input.split(',') if e.strip()]
+
+    logger.debug(f"Visualizing flight data from {json_path} with time window {start_time} to {end_time} and events={events}")
+    plot_flight_data(json_path, start_time, end_time, show_figures=answers['show_figures'], events=events)
     input("\nPress Enter to continue...")
     clear_screen()
     return True

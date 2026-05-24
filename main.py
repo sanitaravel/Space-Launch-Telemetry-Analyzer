@@ -16,6 +16,9 @@ from utils.suppress_warnings import suppress_ffmpeg_warnings
 # Call this early in your application startup
 suppress_ffmpeg_warnings()
 
+# Ensure watermarking is applied globally for all plots
+import utils.watermark
+
 # Initialize logger
 logger = get_logger(__name__)
 

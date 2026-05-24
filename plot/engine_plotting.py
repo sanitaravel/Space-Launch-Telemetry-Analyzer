@@ -14,7 +14,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch_number: Union[str, int], show_figures: bool = True):
+def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch_number: Union[str, int], show_figures: bool = True, events_seconds: list = None):
     """
     Create a plot for a specific vehicle's engine activity.
 
@@ -78,6 +78,46 @@ def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch
     plt.legend(fontsize=LEGEND_FONT_SIZE)
     plt.tight_layout()
 
+    # Draw event vertical lines if provided
+    if events_seconds:
+        try:
+            ymin, ymax = plt.ylim()
+        except Exception:
+            ymin, ymax = 0, 1
+
+        # Determine x range from plotted engine activity (where at least one engine col has data)
+        try:
+            mask = df[engine_cols].notna().any(axis=1)
+            valid_x = df.loc[mask, 'real_time_seconds']
+            if not valid_x.empty:
+                x_min = float(valid_x.min())
+                x_max = float(valid_x.max())
+            else:
+                x_min, x_max = None, None
+        except Exception:
+            x_min, x_max = None, None
+
+        for item in events_seconds:
+            try:
+                if isinstance(item, (int, float)):
+                    seconds = float(item)
+                    label = f"{int(round(seconds))}s"
+                elif isinstance(item, (list, tuple)):
+                    seconds = float(item[0])
+                    label = item[1] if item[1] else f"{int(round(seconds))}s"
+                else:
+                    continue
+
+                # Discard events outside plotted data range
+                if x_min is not None and x_max is not None:
+                    if seconds < x_min or seconds > x_max:
+                        logger.debug(f"Discarding event '{label}' at {seconds}s — outside data range {x_min}-{x_max}")
+                        continue
+
+                plt.axvline(x=seconds, color='gray', linestyle='--', linewidth=1)
+                plt.text(seconds, ymax * 0.98, label, rotation=90, va='top', ha='right', fontsize=8, color='gray')
+            except Exception:
+                logger.debug(f"Failed to draw event line for {item}")
     # Save figure
     os.makedirs(folder, exist_ok=True)
     save_path = f"{folder}/{vehicle}_engine_timeline.png"
@@ -99,7 +139,7 @@ def create_engine_group_plot(df: pd.DataFrame, vehicle: str, folder: str, launch
         plt.close(fig)
 
 
-def create_engine_timeline_plot(df: pd.DataFrame, folder: str, launch_number: Union[str, int], show_figures: bool = True):
+def create_engine_timeline_plot(df: pd.DataFrame, folder: str, launch_number: Union[str, int], show_figures: bool = True, events_seconds: list = None):
     """
     Create engine activity plots for all detected vehicles.
 
@@ -128,10 +168,10 @@ def create_engine_timeline_plot(df: pd.DataFrame, folder: str, launch_number: Un
     
     # Create plots for vehicles with engine data
     for vehicle in vehicles_with_engines:
-        create_engine_group_plot(df, vehicle, folder, launch_number, show_figures)
+        create_engine_group_plot(df, vehicle, folder, launch_number, show_figures, events_seconds=events_seconds)
 
 
-def create_engine_performance_correlation(df: pd.DataFrame, vehicle: str, folder: str, launch_number: Union[str, int], show_figures: bool = True) -> None:
+def create_engine_performance_correlation(df: pd.DataFrame, vehicle: str, folder: str, launch_number: Union[str, int], show_figures: bool = True, events_seconds: list = None) -> None:
     """
     Create a plot showing correlation between engine activity and vehicle performance.
 
@@ -203,7 +243,20 @@ def create_engine_performance_correlation(df: pd.DataFrame, vehicle: str, folder
     plt.title(title_with_launch, fontsize=TITLE_FONT_SIZE)
     plt.tick_params(labelsize=TICK_FONT_SIZE)
 
-    # Save figure with high quality
+    # Draw vertical event lines if provided
+    if events_seconds:
+        try:
+            ymin, ymax = plt.ylim()
+        except Exception:
+            ymin, ymax = 0, 1
+        for e in events_seconds:
+            try:
+                plt.axvline(x=e, color='gray', linestyle='--', linewidth=1)
+                plt.text(e, ymax * 0.98, f"{int(round(e))}s", rotation=90, va='top', ha='right', fontsize=8, color='gray')
+            except Exception:
+                logger.debug(f"Failed to draw event line for {e}")
+
+    # Save figure with high quality (after drawing events)
     os.makedirs(folder, exist_ok=True)
     save_path = f"{folder}/{vehicle}_velocity_vs_engines.png"
     plt.savefig(save_path, dpi=300, bbox_inches='tight')

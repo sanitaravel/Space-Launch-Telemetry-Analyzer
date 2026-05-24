@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 def create_fuel_level_plot(df: pd.DataFrame, x: str, y_cols: list, title: str, filename: str, 
                            labels: list, x_axis: str, y_axis: str, folder: str, 
-                           launch_number: Union[str, int], show_figures: bool) -> None:
+                           launch_number: Union[str, int], show_figures: bool, events_seconds: list = None) -> None:
     """
     Create and save a fuel level plot showing multiple fuel types (LOX and CH4) over time.
 
@@ -92,11 +92,50 @@ def create_fuel_level_plot(df: pd.DataFrame, x: str, y_cols: list, title: str, f
     # Tight layout for better spacing
     plt.tight_layout()
 
-    # Save with high quality
+    # Draw vertical lines for events if provided
+    if events_seconds:
+        try:
+            ymin, ymax = plt.ylim()
+        except Exception:
+            ymin, ymax = 0, 100
+
+        # Determine x range from plotted data points (where at least one y_col has data)
+        try:
+            mask = df[y_cols].notna().any(axis=1)
+            valid_x = df.loc[mask, x]
+            if not valid_x.empty:
+                x_min = float(valid_x.min())
+                x_max = float(valid_x.max())
+            else:
+                x_min, x_max = None, None
+        except Exception:
+            x_min, x_max = None, None
+
+        for item in events_seconds:
+            try:
+                if isinstance(item, (int, float)):
+                    seconds = float(item)
+                    label = f"{int(round(seconds))}s"
+                elif isinstance(item, (list, tuple)):
+                    seconds = float(item[0])
+                    label = item[1] if item[1] else f"{int(round(seconds))}s"
+                else:
+                    continue
+
+                # Discard events outside plotted data range
+                if x_min is not None and x_max is not None:
+                    if seconds < x_min or seconds > x_max:
+                        logger.debug(f"Discarding event '{label}' at {seconds}s — outside data range {x_min}-{x_max}")
+                        continue
+
+                plt.axvline(x=seconds, color='gray', linestyle='--', linewidth=1)
+                plt.text(seconds, ymax * 0.98, label, rotation=90, va='top', ha='right', fontsize=8, color='gray')
+            except Exception:
+                logger.debug(f"Failed to draw event line for {item}")
+    # Save with high quality (after drawing events)
     save_path = f"{folder}/{filename}"
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     logger.info(f"Saved fuel level plot to {save_path}")
-
     # If showing figures, add to interactive viewer instead of displaying
     if show_figures:
         # Check if we're in interactive mode (viewer exists in the caller's context)

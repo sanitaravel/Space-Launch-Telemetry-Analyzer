@@ -24,8 +24,141 @@ sns.set_theme(style="whitegrid", context="talk",
               palette="colorblind", font_scale=1.1)
 
 
+def parse_event_times(events):
+    """
+    Parse a list of event entries into a list of (seconds, label) tuples.
+
+    Accepted entry forms:
+      - 'hh:mm:ss' or 'mm:ss' or 'ss'
+      - 'Label@hh:mm:ss' or 'hh:mm:ss@Label'
+      - 'Label=hh:mm:ss' or 'hh:mm:ss=Label'
+      - 'hh:mm:ss Label' (space-separated)
+      - numeric seconds (int/float)
+
+    Returns None for no valid events, otherwise list of (float_seconds, label_or_None).
+    """
+    import re
+
+    if not events:
+        return None
+    parsed = []
+
+    def is_time_token(tok: str) -> bool:
+        return bool(re.match(r"^\d{1,2}(:\d{1,2}){0,2}$", tok.strip()))
+
+    def token_to_seconds(tok: str):
+        parts = [int(p) for p in tok.split(":")]
+        if len(parts) == 3:
+            return parts[0] * 3600 + parts[1] * 60 + parts[2]
+        elif len(parts) == 2:
+            return parts[0] * 60 + parts[1]
+        elif len(parts) == 1:
+            return parts[0]
+        else:
+            raise ValueError("Invalid time token")
+
+    for e in events:
+        if e is None:
+            continue
+        # numeric seconds
+        if isinstance(e, (int, float)):
+            parsed.append((float(e), None))
+            continue
+
+        s = str(e).strip()
+        if not s:
+            continue
+
+        # Split on explicit separators first
+        if "@" in s:
+            left, right = [p.strip() for p in s.split("@", 1)]
+            if is_time_token(left):
+                try:
+                    secs = token_to_seconds(left)
+                    label = right if right else None
+                    parsed.append((float(secs), label))
+                    continue
+                except Exception:
+                    pass
+            if is_time_token(right):
+                try:
+                    secs = token_to_seconds(right)
+                    label = left if left else None
+                    parsed.append((float(secs), label))
+                    continue
+                except Exception:
+                    pass
+
+        if "=" in s:
+            left, right = [p.strip() for p in s.split("=", 1)]
+            if is_time_token(left):
+                try:
+                    secs = token_to_seconds(left)
+                    label = right if right else None
+                    parsed.append((float(secs), label))
+                    continue
+                except Exception:
+                    pass
+            if is_time_token(right):
+                try:
+                    secs = token_to_seconds(right)
+                    label = left if left else None
+                    parsed.append((float(secs), label))
+                    continue
+                except Exception:
+                    pass
+
+        # Space-separated tokens: pick which is time
+        parts = s.split()
+        if len(parts) == 2:
+            a, b = parts
+            if is_time_token(a):
+                try:
+                    secs = token_to_seconds(a)
+                    parsed.append((float(secs), b))
+                    continue
+                except Exception:
+                    pass
+            if is_time_token(b):
+                try:
+                    secs = token_to_seconds(b)
+                    parsed.append((float(secs), a))
+                    continue
+                except Exception:
+                    pass
+
+        # Fallback: if the whole string looks like time
+        if is_time_token(s):
+            try:
+                secs = token_to_seconds(s)
+                parsed.append((float(secs), None))
+                continue
+            except Exception:
+                pass
+
+        # Could not parse this entry; ignore it
+        continue
+
+    return parsed if parsed else None
+
+
+def seconds_to_hhmmss(sec: float) -> str:
+    try:
+        sec_int = int(round(sec))
+        h = sec_int // 3600
+        m = (sec_int % 3600) // 60
+        s = sec_int % 60
+        if h:
+            return f"{h:02d}:{m:02d}:{s:02d}"
+        else:
+            return f"{m:02d}:{s:02d}"
+    except Exception:
+        return str(sec)
+
+
 def create_scatter_plot(df: pd.DataFrame, x: str, y: str, title: str, filename: str, label: str, 
-                        x_axis: str, y_axis: str, folder: str, launch_number: Union[str, int], show_figures: bool) -> None:
+                        x_axis: str, y_axis: str, folder: str, launch_number: Union[str, int], show_figures: bool,
+                        events_seconds: list = None) -> None:
     """
     Create and save a scatter plot for the data using seaborn.
 
@@ -98,7 +231,48 @@ def create_scatter_plot(df: pd.DataFrame, x: str, y: str, title: str, filename: 
     # Add legend with improved visibility
     plt.legend(frameon=True, fontsize=LEGEND_FONT_SIZE)
 
-    # Save with high quality
+    # Draw vertical lines for any provided events (seconds,label)
+    if events_seconds:
+        try:
+            ymin, ymax = plt.ylim()
+        except Exception:
+            ymin, ymax = 0, 1
+
+        # Determine x range from plotted data points (x where y is present)
+        try:
+            valid_xy = df[[x, y]].dropna()
+            if not valid_xy.empty:
+                x_min = float(valid_xy[x].min())
+                x_max = float(valid_xy[x].max())
+            else:
+                x_min, x_max = None, None
+        except Exception:
+            x_min, x_max = None, None
+
+        for item in events_seconds:
+            try:
+                if isinstance(item, (int, float)):
+                    seconds = float(item)
+                    label = seconds_to_hhmmss(seconds)
+                elif isinstance(item, (list, tuple)):
+                    seconds = float(item[0])
+                    label = item[1] if item[1] else seconds_to_hhmmss(seconds)
+                else:
+                    continue
+
+                # Discard events outside plotted data range
+                if x_min is not None and x_max is not None:
+                    if seconds < x_min or seconds > x_max:
+                        logger.debug(f"Discarding event '{label}' at {seconds}s — outside data range {x_min}-{x_max}")
+                        continue
+
+                plt.axvline(x=seconds, color='gray', linestyle='--', linewidth=1)
+                # small label at top
+                plt.text(seconds, ymax * 0.98, label, rotation=90, va='top', ha='right', fontsize=8, color='gray')
+            except Exception:
+                logger.debug(f"Failed to draw event line for {item}")
+
+    # Save with high quality (after drawing events)
     save_path = f"{folder}/{filename}"
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     logger.info(f"Saved scatter plot to {save_path}")
@@ -119,7 +293,7 @@ def create_scatter_plot(df: pd.DataFrame, x: str, y: str, title: str, filename: 
         plt.close(fig)
 
 
-def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, show_figures: bool = True) -> None:
+def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, show_figures: bool = True, events: list = None) -> None:
     """
     Plot flight data from a JSON file with optional time window limits.
 
@@ -155,6 +329,9 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
     if show_figures:
         from .interactive_viewer import show_plots_interactively
         viewer = show_plots_interactively(f"{viewer_title_prefix} - Flight Data Visualization")
+
+    # Parse optional events argument (list of hh:mm:ss strings or seconds)
+    events_seconds = parse_event_times(events)
 
     # Filter data by time window
     original_count = len(df)
@@ -200,7 +377,7 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
                 launch_number,
                 show_figures
             )
-            create_fuel_level_plot(df, *params)
+            create_fuel_level_plot(df, *params, events_seconds=events_seconds)
             fuel_plot_count += 1
     
     logger.info(f"Created {fuel_plot_count} fuel level plots")
@@ -208,13 +385,13 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
     # Create engine timeline plots for available vehicles
     for vehicle in vehicles:
         if any(col.startswith(f"{vehicle}.") and "active" in col for col in df.columns):
-            create_engine_timeline_plot(df, folder, launch_number, show_figures)
+            create_engine_timeline_plot(df, folder, launch_number, show_figures, events_seconds=events_seconds)
             break  # Only create once, as it handles all vehicles
     
     # Create correlation plots between engine activity and performance for each vehicle
     for vehicle in vehicles:
         if any(col.startswith(f"{vehicle}.") and "active" in col for col in df.columns):
-            create_engine_performance_correlation(df, vehicle, folder, launch_number, show_figures)
+            create_engine_performance_correlation(df, vehicle, folder, launch_number, show_figures, events_seconds=events_seconds)
     
     # Create standard plots based on detected vehicles
     plot_count = 0
@@ -229,7 +406,7 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
                 beautify_vehicle_name(vehicle), 'Mission Time (seconds)', 'Velocity (km/h)',
                 folder, launch_number, show_figures
             )
-            create_scatter_plot(df, *params)
+            create_scatter_plot(df, *params, events_seconds=events_seconds)
             plot_count += 1
         
         # Altitude plot
@@ -242,7 +419,7 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
                 beautify_vehicle_name(vehicle), 'Mission Time (seconds)', 'Altitude (km)',
                 folder, launch_number, show_figures
             )
-            create_scatter_plot(df, *params)
+            create_scatter_plot(df, *params, events_seconds=events_seconds)
             plot_count += 1
         
         # Acceleration plot
@@ -255,7 +432,7 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
                 beautify_vehicle_name(vehicle), 'Mission Time (seconds)', 'Acceleration (m/s²)',
                 folder, launch_number, show_figures
             )
-            create_scatter_plot(df, *params)
+            create_scatter_plot(df, *params, events_seconds=events_seconds)
             plot_count += 1
         
         # G-force plot
@@ -268,7 +445,7 @@ def plot_flight_data(json_path: str, start_time: int = 0, end_time: int = -1, sh
                 beautify_vehicle_name(vehicle), 'Mission Time (seconds)', 'G-Force (g)',
                 folder, launch_number, show_figures
             )
-            create_scatter_plot(df, *params)
+            create_scatter_plot(df, *params, events_seconds=events_seconds)
             plot_count += 1
     
     logger.info(f"Created {plot_count} standard plots")
