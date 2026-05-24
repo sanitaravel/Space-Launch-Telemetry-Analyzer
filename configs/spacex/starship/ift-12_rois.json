@@ -1,0 +1,400 @@
+{
+  "version": 3,
+  "video_source": {
+    "type": "twitter/x",
+    "url": "https://x.com/i/broadcasts/1pKkOykQRgNKj"
+  },
+  "time_unit": "frames",
+  "vehicles": [
+    "starship",
+    "superheavy"
+  ],
+  "rois": [
+    {
+      "id": "speed",
+      "vehicle": "superheavy",
+      "label": "Superheavy Speed Ascent",
+      "x": 1542,
+      "y": 964,
+      "w": 116,
+      "h": 45,
+      "start_time": 58107,
+      "end_time": 62777,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "speed",
+      "vehicle": "starship",
+      "label": "Starship Speed",
+      "x": 1541,
+      "y": 963,
+      "w": 116,
+      "h": 45,
+      "start_time": 58107,
+      "end_time": 70707,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "superheavy",
+      "label": "Superheavy Altitude Ascent",
+      "x": 1705,
+      "y": 964,
+      "w": 120,
+      "h": 44,
+      "start_time": 58107,
+      "end_time": 62549,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "starship",
+      "label": "Starship Altitude",
+      "x": 1704,
+      "y": 964,
+      "w": 120,
+      "h": 42,
+      "start_time": 58107,
+      "end_time": 62549,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "time",
+      "vehicle": null,
+      "label": "Time",
+      "x": 829,
+      "y": 967,
+      "w": 260,
+      "h": 41,
+      "start_time": 58107,
+      "end_time": 178445,
+      "measurement_unit": "T[+-]\\d{2}:\\d{2}:\\d{2}"
+    },
+    {
+      "id": "engines",
+      "vehicle": "superheavy",
+      "label": "Superheavy Engines",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 58107,
+      "end_time": 64818,
+      "measurement_unit": "",
+      "points": {
+        "Inner Ring": [
+          [
+            147,
+            985
+          ],
+          [
+            162,
+            984
+          ],
+          [
+            154,
+            998
+          ]
+        ],
+        "Middle Ring": [
+          [
+            131,
+            981
+          ],
+          [
+            138,
+            970
+          ],
+          [
+            154,
+            964
+          ],
+          [
+            169,
+            969
+          ],
+          [
+            179,
+            982
+          ],
+          [
+            179,
+            997
+          ],
+          [
+            170,
+            1010
+          ],
+          [
+            155,
+            1015
+          ],
+          [
+            140,
+            1009
+          ],
+          [
+            130,
+            996
+          ]
+        ],
+        "Outer Ring": [
+          [
+            113,
+            982
+          ],
+          [
+            115,
+            971
+          ],
+          [
+            123,
+            959
+          ],
+          [
+            135,
+            951
+          ],
+          [
+            148,
+            947
+          ],
+          [
+            162,
+            946
+          ],
+          [
+            173,
+            951
+          ],
+          [
+            184,
+            959
+          ],
+          [
+            191,
+            969
+          ],
+          [
+            197,
+            982
+          ],
+          [
+            196,
+            996
+          ],
+          [
+            194,
+            1009
+          ],
+          [
+            187,
+            1019
+          ],
+          [
+            173,
+            1027
+          ],
+          [
+            162,
+            1031
+          ],
+          [
+            147,
+            1031
+          ],
+          [
+            134,
+            1026
+          ],
+          [
+            123,
+            1019
+          ],
+          [
+            117,
+            1009
+          ],
+          [
+            113,
+            996
+          ]
+        ]
+      }
+    },
+    {
+      "id": "engines",
+      "vehicle": "starship",
+      "label": "Starship Engines Ascent",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 62589,
+      "end_time": 73303,
+      "measurement_unit": "",
+      "points": {
+        "Raptor_A": [
+          [
+            1764,
+            980
+          ],
+          [
+            1772,
+            992
+          ],
+          [
+            1757,
+            993
+          ]
+        ],
+        "Raptor_V": [
+          [
+            1738,
+            973
+          ],
+          [
+            1793,
+            972
+          ],
+          [
+            1763,
+            1023
+          ]
+        ]
+      }
+    },
+    {
+      "id": "speed",
+      "vehicle": "superheavy",
+      "label": "Superheavy Speed Descent",
+      "x": 96,
+      "y": 964,
+      "w": 117,
+      "h": 44,
+      "start_time": 64899,
+      "end_time": 69747,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "superheavy",
+      "label": "Superheavy Altitude Descent",
+      "x": 259,
+      "y": 965,
+      "w": 120,
+      "h": 44,
+      "start_time": 64899,
+      "end_time": 69747,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "speed",
+      "vehicle": "starship",
+      "label": "Starship Speed Cruise",
+      "x": 96,
+      "y": 962,
+      "w": 120,
+      "h": 47,
+      "start_time": 70756,
+      "end_time": 178445,
+      "measurement_unit": "km/h"
+    },
+    {
+      "id": "altitude",
+      "vehicle": "starship",
+      "label": "Starship Altitude Cruise",
+      "x": 259,
+      "y": 964,
+      "w": 123,
+      "h": 44,
+      "start_time": 70756,
+      "end_time": 178445,
+      "measurement_unit": "km"
+    },
+    {
+      "id": "engines",
+      "vehicle": "starship",
+      "label": "Starship Engines Cruise",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 73863,
+      "end_time": 75093,
+      "measurement_unit": "",
+      "points": {
+        "Raptor_A": [
+          [
+            1756,
+            994
+          ],
+          [
+            1765,
+            980
+          ],
+          [
+            1774,
+            993
+          ]
+        ],
+        "Raptor_V": [
+          [
+            1735,
+            973
+          ],
+          [
+            1791,
+            975
+          ],
+          [
+            1765,
+            1022
+          ]
+        ]
+      }
+    },
+    {
+      "id": "engines",
+      "vehicle": "starship",
+      "label": "Starship Engines Landing",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "start_time": 176547,
+      "end_time": 178445,
+      "measurement_unit": "",
+      "points": {
+        "Raptor_A": [
+          [
+            1764,
+            981
+          ],
+          [
+            1771,
+            993
+          ],
+          [
+            1757,
+            993
+          ]
+        ],
+        "Raptor_V": [
+          [
+            1737,
+            975
+          ],
+          [
+            1791,
+            974
+          ],
+          [
+            1766,
+            1022
+          ]
+        ]
+      }
+    }
+  ]
+}

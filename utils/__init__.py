@@ -185,3 +185,11 @@ if 'get_video_files_from_flight_recordings' in globals():
 
 if 'validate_number' in globals():
     __all__.extend(['validate_number', 'validate_positive_number'])
+
+# Import the watermark module last so that importing `utils` applies plot watermarking
+# without introducing circular import issues earlier in module initialization.
+try:
+    import utils.watermark  # noqa: F401
+except Exception:
+    # Be conservative: if watermark import fails, continue silently.
+    pass
